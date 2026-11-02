@@ -164,10 +164,11 @@ function home() {
       <button class="qbtn q6" data-go="#balloons"><span>🎈</span>Шарики${S.tokens ? ` <em>${S.tokens}</em>` : ''}</button>
     </div>
     <h2 class="sec">Острова знаний</h2>
-    <div class="islands">${TOPICS.map(t => {
+    <div class="islands">${TOPICS.map((t, i) => {
       const p = topicProgress(t);
+      const sep = t.extra && !(TOPICS[i - 1] || {}).extra ? '<h2 class="sec extra-sec">⭐ Сверх учебника — для пятёрки с плюсом</h2><p class="muted extra-note">Этих тем нет в учебнике этого года. Они сложнее — попробуй, когда пройдёшь основные острова!</p>' : '';
       if (!p) return `<button class="island soon" data-act="soon"><div class="isl-emoji">${t.emoji}</div><div class="isl-body"><div class="isl-title">${t.title}</div><div class="isl-sub">${t.sub}</div><div class="isl-soon">Скоро откроется ✨</div></div></button>`;
-      return `<button class="island" data-go="#topic/${t.id}"><div class="isl-emoji">${t.emoji}</div><div class="isl-body"><div class="isl-title">${t.title}</div><div class="isl-sub">${t.sub}</div>
+      return `${sep}<button class="island${t.extra ? ' extra' : ''}" data-go="#topic/${t.id}"><div class="isl-emoji">${t.emoji}</div><div class="isl-body"><div class="isl-title">${t.title}</div><div class="isl-sub">${t.sub}</div>
         <div class="bar"><i style="width:${Math.round(100 * p.got / p.max)}%"></i></div><div class="isl-prog">★ ${p.got} из ${p.max}</div></div></button>`;
     }).join('')}</div>
     <div class="home-foot">
