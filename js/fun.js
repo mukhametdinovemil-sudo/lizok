@@ -119,7 +119,7 @@ let roomTab = 'wear';
 function room() {
   const draw = popSel => {
     const list = SHOP.filter(i => i.kind === roomTab);
-    app.innerHTML = `<div class="screen">${header('🏠 Комната Пинки', '#home')}
+    app.innerHTML = `<div class="screen">${header('🏠 Комната Пинки', '#pinky')}
       ${roomScene()}
       <div class="bank">В копилке: <b>⭐ ${bal()}</b></div>
       <div class="tabs">${[['wear', '👗 Наряды'], ['room', '🛋️ Мебель'], ['wall', '🎨 Обои']].map(([k, t]) => `<button class="tab ${k === roomTab ? 'on' : ''}" data-tab="${k}">${t}</button>`).join('')}</div>
@@ -196,13 +196,13 @@ function prizeAction(a) {
 const chestReady = () => (S.chest || {}).date !== U.today();
 function chest() {
   if (!chestReady()) {
-    app.innerHTML = `<div class="screen result">${header('🎁 Сундучок дня', '#home')}
+    app.innerHTML = `<div class="screen result">${header('🎁 Сундучок дня', '#games')}
       <div class="chest-big open">🎁</div>
       ${mascotHTML('Сегодняшний сундучок уже открыт! Новый будет завтра. А пока можно поиграть или пройти урок.')}
       <button class="btn big wide" data-go="#home">На главную</button></div>`;
     return;
   }
-  app.innerHTML = `<div class="screen result">${header('🎁 Сундучок дня', '#home')}
+  app.innerHTML = `<div class="screen result">${header('🎁 Сундучок дня', '#games')}
     <div class="chest-big wobble">🎁</div>
     ${mascotHTML('Реши 5 заданий — и сундучок откроется! Внутри сюрприз: звёздочки, наклейка или подарок для меня.')}
     <button class="btn big wide" data-act="go">Открыть задания ✨</button></div>`;
@@ -216,7 +216,7 @@ function startDaily() {
     const L = U.pick(curPool && i % 2 === 0 ? curPool : pool); // 3 из 5 заданий — по теме «Сейчас в школе»
     return { lessonId: L.id, level, gi: U.rnd(0, L.gens[level].length - 1) };
   });
-  startSession({ mode: 'daily', title: 'Задание дня', items, back: '#home' });
+  startSession({ mode: 'daily', title: 'Задание дня', items, back: '#games' });
 }
 function chestReward() {
   const r = Math.random(), free = SHOP.filter(i => i.price > 0 && i.price <= 40 && !S.owned.includes(i.id));
@@ -253,14 +253,14 @@ const BAL_COLORS = ['#ff5fa2', '#b197fc', '#ffd43b', '#63e6be', '#ff8787', '#74c
 function balloons() {
   const best = S.balloonBest || 0;
   if (!S.tokens) {
-    app.innerHTML = `<div class="screen">${header('🎈 Шарики', '#home')}
+    app.innerHTML = `<div class="screen">${header('🎈 Шарики', '#games')}
       ${mascotHTML('Игра открывается в награду: за каждый пройденный урок и за сундучок дня. Пройди урок — и возвращайся!')}
       <div class="big-emoji center">🎈🎈🎈</div>
       <p class="center">Рекорд: <b>${best}</b></p>
       <button class="btn big wide" data-go="#home">К урокам</button></div>`;
     return;
   }
-  app.innerHTML = `<div class="screen">${header('🎈 Шарики', '#home')}
+  app.innerHTML = `<div class="screen">${header('🎈 Шарики', '#games')}
     ${mascotHTML('Наверху пример. Лопай шарик с правильным ответом, пока он не улетел! Ошибёшься — потеряешь сердечко.')}
     <div class="big-emoji center">🎈🎈🎈</div>
     <p class="center">Игр в запасе: <b>${S.tokens}</b> · Рекорд: <b>${best}</b></p>
@@ -278,7 +278,7 @@ function balloonRun() {
   S.tokens--; save();
   let score = 0, lives = 3, round = 0, dur = 7, busy = false;
   app.innerHTML = `<div class="screen bal-screen">
-    <header class="top"><button class="icon-btn" data-go="#home" aria-label="Выйти">✕</button>
+    <header class="top"><button class="icon-btn" data-go="#games" aria-label="Выйти">✕</button>
       <div class="bal-q" id="bq"></div><div class="pill" id="bs">🎈 0</div></header>
     <div class="lives" id="bl"></div>
     <div class="sky-field" id="bf"></div></div>`;
