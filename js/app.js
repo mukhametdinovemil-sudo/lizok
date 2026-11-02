@@ -6,7 +6,7 @@ const fresh = () => ({
   speed: {}, days: {}, pin: null, sound: true, created: Date.now(),
   // развлечения (fun.js)
   spent: 0, owned: [], equip: {}, room: {}, wall: 'w-pink', prize: null, prizesDone: [],
-  visited: [], islandsDone: [], chest: {}, tokens: 0, balloonBest: 0,
+  visited: [], islandsDone: [], chest: {}, tokens: 0, balloonBest: 0, current: null,
 });
 let S;
 function load() {
@@ -143,7 +143,15 @@ function topicProgress(t) {
   const got = t.lessons.reduce((s, l) => s + ((S.lessons[l.id] || {}).best || 0), 0);
   return { got, max: t.lessons.length * 3 };
 }
+function islandHTML(t, cls = '') {
+  const p = topicProgress(t);
+  if (!p) return `<button class="island soon" data-act="soon"><div class="isl-emoji">${t.emoji}</div><div class="isl-body"><div class="isl-title">${t.title}</div><div class="isl-sub">${t.sub}</div><div class="isl-soon">Скоро откроется ✨</div></div></button>`;
+  return `<button class="island${t.extra ? ' extra' : ''} ${cls}" data-go="#topic/${t.id}"><div class="isl-emoji">${t.emoji}</div><div class="isl-body"><div class="isl-title">${t.title}</div><div class="isl-sub">${t.sub}</div>
+    <div class="bar"><i style="width:${Math.round(100 * p.got / p.max)}%"></i></div><div class="isl-prog">★ ${p.got} из ${p.max}</div></div></button>`;
+}
 function home() {
+  const cur = TOPICS.find(t => t.id === S.current) || null;
+  const list = TOPICS.filter(t => t !== cur);
   const hr = new Date().getHours();
   const greet = hr < 12 ? 'Доброе утро' : hr < 18 ? 'Привет' : 'Добрый вечер';
   const review = reviewKeys().length, streak = calcStreak();
@@ -163,13 +171,11 @@ function home() {
       <button class="qbtn q5" data-go="#chest"><span class="${chestReady() ? 'wob' : ''}">🎁</span>Сундучок дня${chestReady() ? ' <em>!</em>' : ''}</button>
       <button class="qbtn q6" data-go="#balloons"><span>🎈</span>Шарики${S.tokens ? ` <em>${S.tokens}</em>` : ''}</button>
     </div>
-    <h2 class="sec">Острова знаний</h2>
-    <div class="islands">${TOPICS.map((t, i) => {
-      const p = topicProgress(t);
-      const sep = t.extra && !(TOPICS[i - 1] || {}).extra ? '<h2 class="sec extra-sec">⭐ Сверх учебника — для пятёрки с плюсом</h2><p class="muted extra-note">Этих тем нет в учебнике этого года. Они сложнее — попробуй, когда пройдёшь основные острова!</p>' : '';
-      if (!p) return `<button class="island soon" data-act="soon"><div class="isl-emoji">${t.emoji}</div><div class="isl-body"><div class="isl-title">${t.title}</div><div class="isl-sub">${t.sub}</div><div class="isl-soon">Скоро откроется ✨</div></div></button>`;
-      return `${sep}<button class="island${t.extra ? ' extra' : ''}" data-go="#topic/${t.id}"><div class="isl-emoji">${t.emoji}</div><div class="isl-body"><div class="isl-title">${t.title}</div><div class="isl-sub">${t.sub}</div>
-        <div class="bar"><i style="width:${Math.round(100 * p.got / p.max)}%"></i></div><div class="isl-prog">★ ${p.got} из ${p.max}</div></div></button>`;
+    ${cur ? `<h2 class="sec now-sec">📌 Сейчас в школе</h2><div class="islands">${islandHTML(cur, 'now')}</div>` : ''}
+    <h2 class="sec">${cur ? 'Остальные острова' : 'Острова знаний'}</h2>
+    <div class="islands">${list.map((t, i) => {
+      const sep = t.extra && !(list[i - 1] || {}).extra ? '<h2 class="sec extra-sec">⭐ Сверх учебника — для пятёрки с плюсом</h2><p class="muted extra-note">Этих тем нет в учебнике этого года. Они сложнее — попробуй, когда пройдёшь основные острова!</p>' : '';
+      return sep + islandHTML(t);
     }).join('')}</div>
     <div class="home-foot">
       <button class="link" data-act="sound">${S.sound ? '🔔 Звук' : '🔕 Без звука'}</button>
@@ -622,6 +628,10 @@ function parentDash() {
         <div><b>${all.tasks ? Math.round(100 * all.ok / all.tasks) : 0}%</b><span>решено верно</span></div>
         <div><b>${calcStreak()}</b><span>дней подряд</span></div>
       </div></div>
+    <div class="card"><h3>📌 Сейчас в школе</h3>
+      <p class="muted">Отметьте тему, которую сейчас проходят в классе. Этот остров будет первым на главном экране, а сундучок дня станет давать задания чаще по нему.</p>
+      <div class="cur-list">${TOPICS.filter(t => !t.extra).map(t => `<button class="cur-btn ${S.current === t.id ? 'on' : ''}" data-act="cur" data-t="${t.id}">${t.emoji} ${t.title}<small>${t.sub.split(' · ')[1] || ''}</small></button>`).join('')}
+      <button class="cur-btn ${!S.current ? 'on' : ''}" data-act="cur" data-t="">Не выбрано</button></div></div>
     ${prizeAdmin()}
     <div class="card"><h3>Последние 7 дней (минуты)</h3>
       <div class="week">${days.map(d => `<div class="wd"><div class="wbar"><i style="height:${Math.round(100 * (d.v.sec / 60) / maxMin)}%"></i></div><b>${Math.round(d.v.sec / 60)}</b><small>${d.label}</small></div>`).join('')}</div>
@@ -650,6 +660,7 @@ function parentDash() {
     if (!b) return;
     const a = b.dataset.act, io = document.getElementById('io');
     if (prizeAction(a)) { if (a !== 'prize-set' || S.prize) parentDash(); return; }
+    if (a === 'cur') { S.current = b.dataset.t || null; save(); toast(S.current ? 'Тема отмечена 📌' : 'Отметка снята'); parentDash(); return; }
     if (a === 'export') {
       const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
       io.innerHTML = `<textarea readonly class="code">${code}</textarea><button class="btn wide" data-act="copy">Скопировать</button>`;
