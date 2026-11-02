@@ -74,7 +74,7 @@ function showCert(a) {
 }
 function awards() {
   const list = S.awards;
-  app.innerHTML = `<div class="screen">${header('📜 Мои грамоты', '#home')}
+  app.innerHTML = `<div class="screen">${header('📜 Мои грамоты', '#pinky')}
     ${mascotHTML(list.length ? `У тебя ${list.length} ${U.plural(list.length, 'грамота', 'грамоты', 'грамот')}! Нажми на любую, чтобы посмотреть и сохранить.` : 'Грамот пока нет. Их дают за пройденный остров, за пятёрку в пробной контрольной и за 7, 14 и 30 дней занятий подряд.')}
     <div class="aw-list">${list.map((a, i) => `<button class="aw-card" data-aw="${i}"><span class="aw-e">${a.emoji}</span><div><b>Грамота</b><small>${a.sub}</small><small class="muted">${dateRu(a.t)}</small></div></button>`).join('')}</div>
     <div class="card"><h3>Как получить грамоту</h3><p>🏝️ Пройти все уроки острова<br>🏆 Получить 5 в пробной контрольной<br>🔥 Заниматься 7, 14 или 30 дней подряд</p></div></div>`;
@@ -129,7 +129,7 @@ function calendar() {
     }
     const st = calcStreak(), todayDone = (S.days[U.today()] || {}).tasks > 0;
     const next = STREAK_GOALS.find(g => !S.streakGot.includes(g.d));
-    app.innerHTML = `<div class="screen">${header('📅 Календарь', '#home')}
+    app.innerHTML = `<div class="screen">${header('📅 Календарь', '#pinky')}
       ${mascotHTML(todayDone ? `Сегодня ты уже занималась — огонёк горит! 🔥 ${next ? `До награды за ${next.d} ${U.plural(next.d, 'день', 'дня', 'дней')} подряд осталось ${Math.max(0, next.d - st)}.` : 'Все награды за серии собраны!'}` : 'Сегодня ты ещё не занималась. Реши хотя бы одно задание, чтобы огонёк не погас!')}
       <div class="stats-row two"><div class="stat"><b>🔥 ${st}</b><span>сейчас подряд</span></div><div class="stat"><b>🏆 ${Math.max(bestStreak(), st)}</b><span>лучшая серия</span></div></div>
       <div class="card cal">
@@ -166,7 +166,7 @@ function teachTask() {
 }
 function teach() {
   const r = S.teach || {};
-  app.innerHTML = `<div class="screen">${header('👩‍🏫 Проверь Пинки', '#home')}
+  app.innerHTML = `<div class="screen">${header('👩‍🏫 Проверь Пинки', '#games')}
     ${mascotHTML('Я тоже учу математику! Я решу 6 заданий, а ты проверь меня, как настоящая учительница. Если я ошиблась — исправь!')}
     <div class="big-emoji center">📒✏️✅</div>
     ${r.runs ? `<p class="center">Ты уже проверила ${r.runs} ${U.plural(r.runs, 'тетрадку', 'тетрадки', 'тетрадок')} Пинки. Рекорд: ${r.best} из 6.</p>` : ''}
@@ -177,7 +177,7 @@ function teachRun() {
   const TOTAL = 6;
   let i = 0, score = 0, earned = 0, cur, shown, right, stage = 'judge', input = '';
   const unit = () => (cur.unit ? ' ' + cur.unit : '');
-  const top = () => `<header class="top"><button class="icon-btn" data-go="#home" aria-label="Выйти">✕</button>
+  const top = () => `<header class="top"><button class="icon-btn" data-go="#games" aria-label="Выйти">✕</button>
     <div class="pbar"><i style="width:${Math.round(100 * (i - 1) / TOTAL)}%"></i><span>Тетрадка ${i} / ${TOTAL}</span></div><div class="pill">⭐ ${bal()}</div></header>`;
   const draw = (fb = '') => {
     const pinky = S.mascot === 'pinky' ? pinkyHTML('mini') : '<img class="m-img" src="img/pinky.svg" alt="">';
@@ -254,7 +254,7 @@ function exam(tid) {
   if (tid && TOPICS.find(t => t.id === tid)) return examStart(tid);
   const last = id => S.exams.find(e => e.topic === id);
   const row = t => { const l = last(t.id); return `<button class="lesson-card" data-go="#exam/${t.id}"><div class="lc-num">${t.emoji}</div><div class="lc-body"><div class="lc-title">${t.title}</div><div class="lc-sub">${l ? `Последняя: ${dateRu(l.t)}` : 'Ещё не писала'}</div></div>${l ? `<b class="grade g${l.grade}">${l.grade}</b>` : ''}</button>`; };
-  app.innerHTML = `<div class="screen">${header('📝 Пробная контрольная', '#home')}
+  app.innerHTML = `<div class="screen">${header('📝 Пробная контрольная', '#learn')}
     ${mascotHTML('Как в школе: 10 заданий, без подсказок и с одной попыткой. В конце — оценка и совет, что повторить. За пятёрку — грамота!')}
     <div class="lessons">${TOPICS.filter(t => !t.extra).map(row).join('')}</div>
     <h2 class="sec extra-sec">⭐ Сверх учебника</h2>
