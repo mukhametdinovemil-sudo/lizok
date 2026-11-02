@@ -211,8 +211,9 @@ function chest() {
 function startDaily() {
   const all = Object.values(LESSON_BY_ID), done = all.filter(l => (S.lessons[l.id] || {}).runs);
   const pool = done.length >= 2 ? done : all;
-  const items = [1, 2, 2, 2, 3].map(level => {
-    const L = U.pick(pool);
+  const curT = TOPICS.find(t => t.id === S.current), curPool = curT ? curT.lessons : null;
+  const items = [1, 2, 2, 2, 3].map((level, i) => {
+    const L = U.pick(curPool && i % 2 === 0 ? curPool : pool); // 3 из 5 заданий — по теме «Сейчас в школе»
     return { lessonId: L.id, level, gi: U.rnd(0, L.gens[level].length - 1) };
   });
   startSession({ mode: 'daily', title: 'Задание дня', items, back: '#home' });
