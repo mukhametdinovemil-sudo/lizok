@@ -113,8 +113,38 @@ const Column = {
     return { items, steps: steps.map(U.dots), rows: 4, cols: W, answer: R };
   },
 
+  // Умножение на двузначное (или трёхзначное) число: неполные произведения со сдвигом, потом сумма
+  mul2(a, b) {
+    const P = a * b, as = String(a), bs = String(b), m = bs.length;
+    const parts = bs.split('').reverse().map(Number).map(d => a * d);
+    const W = Math.max(String(P).length, as.length, bs.length) + 1;
+    const items = [], put = (r, end, str, s, cls) => String(str).split('').reverse().forEach((ch, k) => items.push({ r, c: end - k, ch, s, cls }));
+    put(0, W - 1, as, 0);
+    put(1, W - 1, bs, 0);
+    items.push({ r: 1, c: 0, ch: '×', s: 0, cls: 'sign' });
+    for (let c = 1; c < W; c++) items.push({ r: 1, c, s: 0, cls: 'ul' });
+    const steps = ['Пишу множители столбиком, разряд под разрядом. Умножать буду на каждую цифру второго множителя по очереди.'];
+    const names = ['единицы', 'десятки', 'сотни'];
+    parts.forEach((p, i) => {
+      const s = i + 1, d = Number(bs[m - 1 - i]);
+      items.push({ r: 1, c: W - 1 - i, s, until: s, cls: 'hl' });
+      put(2 + i, W - 1 - i, p, s);
+      steps.push(i === 0
+        ? `Умножаю ${U.fmt(a)} на единицы: ${U.fmt(a)} · ${d} = ${U.fmt(p)}. Пишу под чертой.`
+        : `Умножаю ${U.fmt(a)} на ${names[i]}: ${U.fmt(a)} · ${d} = ${U.fmt(p)}. Это ${names[i]}, поэтому пишу со сдвигом на ${i} ${U.plural(i, 'клетку', 'клетки', 'клеток')} влево — последняя цифра под ${['единицами', 'десятками', 'сотнями'][i]}.`);
+    });
+    const last = 2 + m - 1, sum = m + 1;
+    items.push({ r: 2 + 1, c: 0, ch: '+', s: sum, cls: 'sign' });
+    for (let c = 1; c < W; c++) items.push({ r: last, c, s: sum, cls: 'ul' });
+    put(last + 1, W - 1, P, sum);
+    steps.push(`Складываю неполные произведения: ${parts.map((p, i) => U.fmt(p * 10 ** i)).join(' + ')} = ${U.fmt(P)}.`);
+    steps.push(`Готово! ${U.fmt(a)} · ${U.fmt(b)} = ${U.fmt(P)}.`);
+    return { items, steps: steps.map(U.dots), rows: last + 2, cols: W, answer: P };
+  },
+
   // общий выбор модели по описанию { kind, ... }
   model(sol) {
+    if (sol.kind === 'mul2') return Column.mul2(sol.a, sol.b);
     if (sol.kind === 'mul') return Column.mul(sol.a, sol.b);
     if (sol.kind === 'add') return Column.add(sol.a, sol.b);
     if (sol.kind === 'sub') return Column.sub(sol.a, sol.b);
