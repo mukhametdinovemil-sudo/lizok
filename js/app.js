@@ -7,6 +7,8 @@ const fresh = () => ({
   // развлечения (fun.js)
   spent: 0, owned: [], equip: {}, room: {}, wall: 'w-pink', prize: null, prizesDone: [],
   visited: [], islandsDone: [], chest: {}, tokens: 0, balloonBest: 0, current: null,
+  // fun2.js
+  exams: [], awards: [], teach: { runs: 0, best: 0 }, streakGot: [],
 });
 let S;
 function load() {
@@ -109,7 +111,7 @@ function route() {
   stopTimers();
   app.onclick = null;
   if (!S.mascot) return welcome();
-  const screens = { home, topic, lesson, practice, review, speed, stickers, parent, room, chest, balloons };
+  const screens = { home, topic, lesson, practice, review, speed, stickers, parent, room, chest, balloons, teach, exam, awards, calendar };
   (screens[name] || home)(arg);
   window.scrollTo(0, 0);
 }
@@ -161,7 +163,7 @@ function home() {
     <div class="stats-row">
       <div class="stat"><b>⭐ ${bal()}</b><span>в копилке</span></div>
       <div class="stat"><b>🎀 ${S.stickers.length}</b><span>${U.plural(S.stickers.length, 'наклейка', 'наклейки', 'наклеек')}</span></div>
-      <div class="stat"><b>🔥 ${streak}</b><span>${U.plural(streak, 'день', 'дня', 'дней')} подряд</span></div>
+      <button class="stat" data-go="#calendar"><b>🔥 ${streak}</b><span>${U.plural(streak, 'день', 'дня', 'дней')} подряд 📅</span></button>
     </div>
     <div class="quick">
       <button class="qbtn q1" data-go="#speed"><span>⚡</span>Тренажёр на скорость</button>
@@ -170,6 +172,9 @@ function home() {
       <button class="qbtn q4" data-go="#room"><span>🏠</span>Комната Пинки</button>
       <button class="qbtn q5" data-go="#chest"><span class="${chestReady() ? 'wob' : ''}">🎁</span>Сундучок дня${chestReady() ? ' <em>!</em>' : ''}</button>
       <button class="qbtn q6" data-go="#balloons"><span>🎈</span>Шарики${S.tokens ? ` <em>${S.tokens}</em>` : ''}</button>
+      <button class="qbtn q7" data-go="#teach"><span>👩‍🏫</span>Проверь Пинки</button>
+      <button class="qbtn q8" data-go="#exam"><span>📝</span>Контрольная</button>
+      <button class="qbtn q9" data-go="#awards"><span>📜</span>Грамоты${S.awards.length ? ` <em>${S.awards.length}</em>` : ''}</button>
     </div>
     ${cur ? `<h2 class="sec now-sec">📌 Сейчас в школе</h2><div class="islands">${islandHTML(cur, 'now')}</div>` : ''}
     <h2 class="sec">${cur ? 'Остальные острова' : 'Острова знаний'}</h2>
@@ -182,6 +187,7 @@ function home() {
       <button class="link" data-act="mascot">🐾 Сменить помощника</button>
       <button class="link" data-go="#parent">🔒 Для брата</button>
     </div></div>`;
+  checkRewards();
   const pz = prizeProgress();
   if (pz && pz.done && !S.prize.celebrated) {
     S.prize.celebrated = true; save();
@@ -321,7 +327,7 @@ function drawTask(msg) {
     <header class="top">
       <button class="icon-btn" data-go="${P.back}" aria-label="Выйти">✕</button>
       <div class="pbar"><i style="width:${pct}%"></i><span>${P.pos + 1} / ${P.items.length}</span></div>
-      <div class="pill">⭐ ${bal()}</div></header>
+      <div class="pill">${P.mode === 'exam' ? '⏱ ' + examTime() : '⭐ ' + bal()}</div></header>
     <div class="card task">
       <div class="lvl lvl${it.level}">${lv[0]} ${lv[1]}</div>
       <div class="q">${t.q}</div>
@@ -329,7 +335,8 @@ function drawTask(msg) {
       ${P.tries > 0 || P.showHint ? `<div class="hint">💡 ${t.hint}</div>` : ''}
     </div>
     ${answer}
-    ${P.tries === 0 && !P.showHint ? '<button class="link center" data-act="hint">💡 Подсказка</button>' : ''}
+    ${P.mode !== 'exam' && P.tries === 0 && !P.showHint ? '<button class="link center" data-act="hint">💡 Подсказка</button>' : ''}
+    ${P.mode === 'exam' ? '<p class="note">Контрольная: без подсказок, одна попытка</p>' : ''}
     ${keypad}
     <div id="sheet"></div></div>`;
   app.onclick = onPracticeClick;
@@ -375,6 +382,19 @@ function check(choiceVal) {
   } else { ok = choiceVal === t.answer; given = choiceVal; }
   const gs = genStat(it), d = day();
   if (P.tries === 0) gs.tries++;
+  if (P.mode === 'exam') {
+    d.tasks++;
+    if (ok) { d.ok++; P.firstOk++; } else {
+      gs.wrong++; gs.bank = Math.min(3, gs.bank + 1);
+      S.mistakes.unshift({ t: Date.now(), l: LESSON_BY_ID[it.lessonId].title + ' (контрольная)', q: U.plain(t.q), a: given, r: ansText(t) });
+      S.mistakes = S.mistakes.slice(0, 40);
+    }
+    P.results.push({ ok, lid: it.lessonId, q: U.plain(t.q), a: String(given), r: ansText(t) });
+    save(); P.locked = true;
+    toast('Ответ записан ✏️');
+    later(nextTask, 350);
+    return;
+  }
   if (ok) {
     beep(true);
     d.tasks++; d.ok++;
@@ -429,6 +449,7 @@ function nextTask() {
 }
 function finish() {
   if (P.mode === 'daily') return chestOpen();
+  if (P.mode === 'exam') return examFinish();
   const total = P.items.length, ratio = P.firstOk / total;
   const n = ratio >= 0.9 ? 3 : ratio >= 0.7 ? 2 : 1;
   const got = [];
@@ -442,6 +463,7 @@ function finish() {
     const tp = TOPICS.find(t => t.id === P.lesson.topic);
     if (tp && tp.lessons.every(l => (S.lessons[l.id] || {}).runs) && !S.islandsDone.includes(tp.id)) {
       S.islandsDone.push(tp.id); S.stars += 10; island = tp;
+      addAward('isl-' + tp.id, `за прохождение острова «${tp.title}»`, tp.emoji);
     }
     title = 'Урок пройден!';
     text = n === 3 ? 'Ты настоящая отличница! 💖' : n === 2 ? 'Очень хорошо! Ещё чуть-чуть — и будет 3 звезды.' : 'Хорошее начало! Перечитай теорию и попробуй ещё раз — получится лучше.';
@@ -467,7 +489,7 @@ function finish() {
       <button class="btn ghost wide" data-go="${P.back}">${P.mode === 'lesson' ? 'К урокам' : 'На главную'}</button>
     </div></div>`;
   if (n >= 2 || got.length) confetti();
-  if (island) later(() => celebrate('🏝️', 'Остров пройден!', `Все уроки острова «${island.title}» пройдены! +10 ⭐ в копилку.`), 1200);
+  if (island) later(() => celebrate('🏝️', 'Остров пройден!', `Все уроки острова «${island.title}» пройдены! +10 ⭐ и новая грамота 📜`), 1200);
 }
 
 // ═════════════ Тренажёр на скорость ═════════════
@@ -633,6 +655,7 @@ function parentDash() {
       <div class="cur-list">${TOPICS.filter(t => !t.extra).map(t => `<button class="cur-btn ${S.current === t.id ? 'on' : ''}" data-act="cur" data-t="${t.id}">${t.emoji} ${t.title}<small>${t.sub.split(' · ')[1] || ''}</small></button>`).join('')}
       <button class="cur-btn ${!S.current ? 'on' : ''}" data-act="cur" data-t="">Не выбрано</button></div></div>
     ${prizeAdmin()}
+    ${examsAdmin()}
     <div class="card"><h3>Последние 7 дней (минуты)</h3>
       <div class="week">${days.map(d => `<div class="wd"><div class="wbar"><i style="height:${Math.round(100 * (d.v.sec / 60) / maxMin)}%"></i></div><b>${Math.round(d.v.sec / 60)}</b><small>${d.label}</small></div>`).join('')}</div>
       <p class="muted">Считается время, когда Лиза что-то нажимает в приложении.</p></div>
