@@ -116,7 +116,8 @@ table.cheat td { padding: 8px; border-bottom: 1px dashed var(--pink-l); }
 .isl-prog { font-size: 13px; color: var(--pink-d); font-weight: 700; margin-top: 2px; }
 .bar { height: 9px; background: var(--bg2); border-radius: 9px; overflow: hidden; margin-top: 6px; }
 .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff8fc0, var(--pink)); border-radius: 9px; }
-.home-foot { display: flex; justify-content: space-between; margin-top: 4px; }
+.home-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 10px; margin-top: 4px; }
+.home-foot .link { white-space: nowrap; font-size: 15px; padding: 6px 4px; }
 
 /* ── уроки ── */
 .lessons { display: flex; flex-direction: column; gap: 10px; }
@@ -443,6 +444,83 @@ button.stat { font: inherit; color: inherit; }
 .goal { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--bg2); font-size: 15px; }
 .goal span { color: var(--muted); text-align: right; }
 .goal.got b { color: var(--good); }
+
+/* ═════════ Нижнее меню и разделы ═════════ */
+.screen.hub { padding-bottom: calc(env(safe-area-inset-bottom) + 96px); }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr);
+  background: rgba(255, 255, 255, .96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-radius: 24px 24px 0 0; box-shadow: 0 -6px 20px rgba(230, 73, 147, .15); padding: 6px 6px calc(env(safe-area-inset-bottom) + 6px); }
+.tab-b { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 2px; border-radius: 16px; font-size: 12px; font-weight: 800; color: var(--muted); }
+.tab-b span { font-size: 24px; transition: transform .2s; }
+.tab-b.on { color: var(--pink-d); background: var(--bg2); }
+.tab-b.on span { transform: translateY(-2px) scale(1.12); }
+.tab-b i { position: absolute; top: 6px; right: 26%; width: 9px; height: 9px; border-radius: 50%; background: #ff922b; }
+.top-title.left { text-align: left; font-size: 24px; padding-left: 4px; }
+.today-top { display: flex; align-items: flex-start; gap: 8px; }
+.today-top .mascot { flex: 1; }
+.continue { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; padding: 16px; border-radius: 26px; color: #fff;
+  background: linear-gradient(135deg, #ff8fc0, #ff5fa2 55%, #e64993); box-shadow: 0 6px 0 #c2337a, 0 10px 24px rgba(230, 73, 147, .35); }
+.continue:active { transform: translateY(4px); box-shadow: 0 2px 0 #c2337a; }
+.c-e { font-size: 44px; width: 64px; height: 64px; display: grid; place-items: center; background: rgba(255, 255, 255, .25); border-radius: 20px; flex: none; }
+.c-body { flex: 1; display: flex; flex-direction: column; }
+.c-body small { font-weight: 700; opacity: .9; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; }
+.c-body b { font-size: 21px; }
+.c-body span { font-size: 14px; opacity: .95; }
+.c-play { font-size: 26px; width: 48px; height: 48px; display: grid; place-items: center; background: #fff; color: var(--pink); border-radius: 50%; flex: none; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.1); } }
+.plan h3 { margin-bottom: 8px; }
+.plan-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.plan-i { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border-radius: 16px; background: var(--bg2); font-weight: 800; font-size: 14px; }
+.plan-i span { font-size: 26px; }
+.plan-i.done { background: var(--good-l); color: var(--good); }
+.plan p { margin: 8px 0 0; }
+.streak-row { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 18px; padding: 12px 16px; box-shadow: var(--shadow); font-size: 17px; }
+.learn-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mini-card { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; background: #fff; border-radius: 18px; padding: 12px; box-shadow: var(--shadow); font-weight: 800; }
+.mini-card span { font-size: 24px; }
+.mini-card em { background: #ff922b; color: #fff; font-style: normal; border-radius: 999px; padding: 1px 8px; font-size: 13px; }
+.g-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.g-card { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 16px 14px; border-radius: 24px; color: #fff; min-height: 128px; box-shadow: var(--shadow); }
+.g-card:active { transform: scale(.97); }
+.g-card .g-e { font-size: 40px; margin-bottom: 4px; }
+.g-card b { font-size: 18px; }
+.g-card small { font-size: 13px; opacity: .95; }
+.g-card em { position: absolute; top: 10px; right: 10px; background: #fff; color: var(--pink-d); font-style: normal; font-weight: 900; border-radius: 999px; min-width: 26px; padding: 2px 8px; text-align: center; }
+.gc1 { background: linear-gradient(160deg, #ffd43b, #fab005); } .gc2 { background: linear-gradient(160deg, #74c0fc, #4dabf7); }
+.gc3 { background: linear-gradient(160deg, #8ce99a, #40c057); } .gc4 { background: linear-gradient(160deg, #ff8fc0, #ff5fa2); }
+.gc5 { background: linear-gradient(160deg, #ffb07c, #ff8787); } .gc6 { background: linear-gradient(160deg, #ffc078, #fd7e14); }
+.gc7 { background: linear-gradient(160deg, #c3a6ff, #9775fa); } .gc8 { background: linear-gradient(160deg, #ffa8d0, #f06595); }
+.room-btn { display: block; position: relative; padding: 0; border-radius: 24px; }
+.room-btn .room { height: 200px; }
+.room-btn .room .pinky.big { width: 110px; height: 110px; margin-left: -55px; font-size: 110px; }
+.room-btn .ri-floorL { font-size: 54px; } .room-btn .ri-floorR { font-size: 44px; } .room-btn .ri-wallL, .room-btn .ri-wallR { font-size: 38px; }
+.room-cta { position: absolute; right: 12px; bottom: 10px; background: #fff; color: var(--pink-d); font-weight: 800; border-radius: 999px; padding: 6px 12px; box-shadow: var(--shadow); font-size: 14px; }
+
+/* карта островов */
+.map { position: relative; margin: 4px 0; }
+.map-path { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mnode { position: absolute; transform: translate(-50%, -50%); width: 116px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.mn-e { position: relative; font-size: 40px; width: 78px; height: 78px; display: grid; place-items: center; border-radius: 50%; background: #fff; box-shadow: 0 5px 0 var(--pink-l), var(--shadow); border: 4px solid #fff; animation: floaty 3.4s ease-in-out infinite; }
+.mnode:nth-child(2n) .mn-e { animation-delay: -1.3s; }
+.mnode:active .mn-e { transform: scale(.94); }
+.mn-t { font-weight: 800; font-size: 13px; line-height: 1.15; text-align: center; background: rgba(255, 255, 255, .85); border-radius: 10px; padding: 2px 6px; }
+.mn-p { font-size: 12px; font-weight: 800; color: var(--pink-d); }
+.mnode.done .mn-e { border-color: #ffd43b; background: #fff9db; }
+.mnode.here .mn-e { border-color: var(--pink); box-shadow: 0 0 0 6px rgba(255, 95, 162, .2), 0 5px 0 var(--pink-l); }
+.mnode.gold .mn-e { box-shadow: 0 5px 0 #ffe066, var(--shadow); }
+.mn-crown { position: absolute; top: -18px; font-size: 24px; font-style: normal; }
+.mn-pin { position: absolute; top: -12px; right: -6px; background: var(--pink); color: #fff; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 2px 7px; }
+.map-pinky { position: absolute; top: 4px; font-size: 46px; line-height: 1; animation: hop 1.4s ease-in-out infinite; }
+.map-pinky.pr { left: 100%; margin-left: -18px; }
+.map-pinky.pl { right: 100%; margin-right: -18px; }
+.map-pinky .m-img { width: 46px; height: 46px; }
+
+/* знакомство */
+.tour { position: fixed; inset: 0; z-index: 90; }
+.tour-hole { position: fixed; border-radius: 22px; box-shadow: 0 0 0 9999px rgba(74, 32, 64, .6); transition: all .25s; pointer-events: none; animation: fadein .3s; }
+.tour-box { position: fixed; left: 14px; right: 14px; max-width: 492px; margin: 0 auto; background: #fff; border-radius: 22px; padding: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); animation: pop .35s; }
+.tour-box .bubble { box-shadow: none; background: var(--bg2); }
+.tour-btns { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 
 @media (max-width: 360px) {
   :root { --cell: 26px; }
