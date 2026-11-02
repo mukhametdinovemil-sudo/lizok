@@ -4,6 +4,9 @@ const KEY = 'lizok_math_v1';
 const fresh = () => ({
   v: 1, mascot: null, stars: 0, stickers: [], lessons: {}, gens: {}, mistakes: [],
   speed: {}, days: {}, pin: null, sound: true, created: Date.now(),
+  // развлечения (fun.js)
+  spent: 0, owned: [], equip: {}, room: {}, wall: 'w-pink', prize: null, prizesDone: [],
+  visited: [], islandsDone: [], chest: {}, tokens: 0, balloonBest: 0,
 });
 let S;
 function load() {
@@ -65,13 +68,15 @@ function confetti() {
   setTimeout(() => box.remove(), 3800);
 }
 function mascotHTML(text, mood = '') {
-  return `<div class="mascot ${mood}"><div class="m-face">${mascot().e}</div><div class="bubble">${text}</div></div>`;
+  const face = S.mascot === 'pinky' ? pinkyHTML('mini') : mascot().e;
+  const sparks = mood === 'happy' ? '<i class="sp sp1">✨</i><i class="sp sp2">💖</i><i class="sp sp3">✨</i>' : '';
+  return `<div class="mascot ${mood}"><div class="m-face">${face}${sparks}</div><div class="bubble">${text}</div></div>`;
 }
 function header(title, back) {
   return `<header class="top">
     ${back ? `<button class="icon-btn" data-go="${back}" aria-label="Назад">←</button>` : '<span class="icon-spacer"></span>'}
     <div class="top-title">${title}</div>
-    <div class="pill">⭐ ${S.stars}</div></header>`;
+    <div class="pill">⭐ ${bal()}</div></header>`;
 }
 function starsHTML(n, total = 3) {
   let h = '';
@@ -104,7 +109,7 @@ function route() {
   stopTimers();
   app.onclick = null;
   if (!S.mascot) return welcome();
-  const screens = { home, topic, lesson, practice, review, speed, stickers, parent };
+  const screens = { home, topic, lesson, practice, review, speed, stickers, parent, room, chest, balloons };
   (screens[name] || home)(arg);
   window.scrollTo(0, 0);
 }
@@ -144,8 +149,9 @@ function home() {
   const review = reviewKeys().length, streak = calcStreak();
   app.innerHTML = `<div class="screen home">
     ${mascotHTML(`${greet}, Лизок! ${U.pick(['Чем займёмся сегодня?', 'Готова к приключениям?', 'Вместе мы станем отличницей!', 'Я по тебе скучала!'])}`)}
+    ${prizeHTML()}
     <div class="stats-row">
-      <div class="stat"><b>⭐ ${S.stars}</b><span>${U.plural(S.stars, 'звёздочка', 'звёздочки', 'звёздочек')}</span></div>
+      <div class="stat"><b>⭐ ${bal()}</b><span>в копилке</span></div>
       <div class="stat"><b>🎀 ${S.stickers.length}</b><span>${U.plural(S.stickers.length, 'наклейка', 'наклейки', 'наклеек')}</span></div>
       <div class="stat"><b>🔥 ${streak}</b><span>${U.plural(streak, 'день', 'дня', 'дней')} подряд</span></div>
     </div>
@@ -153,6 +159,9 @@ function home() {
       <button class="qbtn q1" data-go="#speed"><span>⚡</span>Тренажёр на скорость</button>
       <button class="qbtn q2" data-go="#review" ${review ? '' : 'disabled'}><span>🩹</span>Работа над ошибками${review ? ` <em>${review}</em>` : ''}</button>
       <button class="qbtn q3" data-go="#stickers"><span>🎀</span>Мои наклейки</button>
+      <button class="qbtn q4" data-go="#room"><span>🏠</span>Комната Пинки</button>
+      <button class="qbtn q5" data-go="#chest"><span class="${chestReady() ? 'wob' : ''}">🎁</span>Сундучок дня${chestReady() ? ' <em>!</em>' : ''}</button>
+      <button class="qbtn q6" data-go="#balloons"><span>🎈</span>Шарики${S.tokens ? ` <em>${S.tokens}</em>` : ''}</button>
     </div>
     <h2 class="sec">Острова знаний</h2>
     <div class="islands">${TOPICS.map(t => {
@@ -166,6 +175,11 @@ function home() {
       <button class="link" data-act="mascot">🐾 Сменить помощника</button>
       <button class="link" data-go="#parent">🔒 Для брата</button>
     </div></div>`;
+  const pz = prizeProgress();
+  if (pz && pz.done && !S.prize.celebrated) {
+    S.prize.celebrated = true; save();
+    later(() => celebrate('🎁', 'Приз заработан!', `«${U.esc(pz.name)}» — ты собрала ${pz.goal} ⭐! Покажи этот экран брату.`), 400);
+  }
   app.onclick = e => {
     const b = e.target.closest('[data-act]');
     if (!b) return;
@@ -179,6 +193,7 @@ function home() {
 function topic(id) {
   const t = TOPICS.find(x => x.id === id);
   if (!t || !t.lessons.length) return go('#home');
+  if (!S.visited.includes(id)) { S.visited.push(id); save(); rocketTo(t); }
   app.innerHTML = `<div class="screen">${header(t.emoji + ' ' + t.title, '#home')}
     ${mascotHTML('В каждом уроке сначала короткая теория, потом задания. Звёздочки ставлю за ответы с первого раза!')}
     <div class="lessons">${t.lessons.map((l, i) => {
@@ -299,7 +314,7 @@ function drawTask(msg) {
     <header class="top">
       <button class="icon-btn" data-go="${P.back}" aria-label="Выйти">✕</button>
       <div class="pbar"><i style="width:${pct}%"></i><span>${P.pos + 1} / ${P.items.length}</span></div>
-      <div class="pill">⭐ ${S.stars}</div></header>
+      <div class="pill">⭐ ${bal()}</div></header>
     <div class="card task">
       <div class="lvl lvl${it.level}">${lv[0]} ${lv[1]}</div>
       <div class="q">${t.q}</div>
@@ -363,6 +378,7 @@ function check(choiceVal) {
     save();
     P.locked = true;
     const first = P.tries === 0;
+    if (first) flyStar();
     document.getElementById('sheet').innerHTML = `<div class="sheet good" data-act="next">
       ${mascotHTML(first ? U.pick(PRAISE) : 'Верно! Со второй попытки тоже здорово 👍', 'happy')}
       ${first ? '<div class="plus">+1 ⭐</div>' : ''}</div>`;
@@ -405,15 +421,21 @@ function nextTask() {
   showTask();
 }
 function finish() {
+  if (P.mode === 'daily') return chestOpen();
   const total = P.items.length, ratio = P.firstOk / total;
   const n = ratio >= 0.9 ? 3 : ratio >= 0.7 ? 2 : 1;
   const got = [];
-  let title, text;
+  let title, text, island = null;
   if (P.mode === 'lesson') {
     const r = S.lessons[P.lesson.id] || (S.lessons[P.lesson.id] = { best: 0, runs: 0, done: 0, ok: 0 });
     if (r.runs === 0) got.push(giveSticker());
     if (n === 3 && !r.got3) { r.got3 = true; got.push(giveSticker()); }
     r.runs++; r.best = Math.max(r.best, n); r.done += total; r.ok += P.firstOk; r.last = Date.now();
+    S.tokens = Math.min(5, (S.tokens || 0) + 1);
+    const tp = TOPICS.find(t => t.id === P.lesson.topic);
+    if (tp && tp.lessons.every(l => (S.lessons[l.id] || {}).runs) && !S.islandsDone.includes(tp.id)) {
+      S.islandsDone.push(tp.id); S.stars += 10; island = tp;
+    }
     title = 'Урок пройден!';
     text = n === 3 ? 'Ты настоящая отличница! 💖' : n === 2 ? 'Очень хорошо! Ещё чуть-чуть — и будет 3 звезды.' : 'Хорошее начало! Перечитай теорию и попробуй ещё раз — получится лучше.';
   } else {
@@ -431,12 +453,14 @@ function finish() {
       <div><b>+${P.earned} ⭐</b><span>заработано</span></div>
     </div>
     ${got.length ? `<div class="new-sticker"><div>Новая наклейка!</div><span>${got.join(' ')}</span></div>` : ''}
+    ${P.mode === 'lesson' ? '<p class="center">🎈 +1 игра «Шарики» — можно поиграть!</p>' : ''}
     <div class="nav-col">
       ${P.mode === 'lesson' ? `<button class="btn big wide" data-go="#practice/${P.lesson.id}">🔁 Ещё раз</button>` : ''}
       ${P.mode === 'lesson' && n < 3 ? `<button class="btn ghost wide" data-go="#lesson/${P.lesson.id}">📖 Повторить теорию</button>` : ''}
       <button class="btn ghost wide" data-go="${P.back}">${P.mode === 'lesson' ? 'К урокам' : 'На главную'}</button>
     </div></div>`;
   if (n >= 2 || got.length) confetti();
+  if (island) later(() => celebrate('🏝️', 'Остров пройден!', `Все уроки острова «${island.title}» пройдены! +10 ⭐ в копилку.`), 1200);
 }
 
 // ═════════════ Тренажёр на скорость ═════════════
@@ -597,6 +621,7 @@ function parentDash() {
         <div><b>${all.tasks ? Math.round(100 * all.ok / all.tasks) : 0}%</b><span>решено верно</span></div>
         <div><b>${calcStreak()}</b><span>дней подряд</span></div>
       </div></div>
+    ${prizeAdmin()}
     <div class="card"><h3>Последние 7 дней (минуты)</h3>
       <div class="week">${days.map(d => `<div class="wd"><div class="wbar"><i style="height:${Math.round(100 * (d.v.sec / 60) / maxMin)}%"></i></div><b>${Math.round(d.v.sec / 60)}</b><small>${d.label}</small></div>`).join('')}</div>
       <p class="muted">Считается время, когда Лиза что-то нажимает в приложении.</p></div>
@@ -623,6 +648,7 @@ function parentDash() {
     const b = e.target.closest('[data-act]');
     if (!b) return;
     const a = b.dataset.act, io = document.getElementById('io');
+    if (prizeAction(a)) { if (a !== 'prize-set' || S.prize) parentDash(); return; }
     if (a === 'export') {
       const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
       io.innerHTML = `<textarea readonly class="code">${code}</textarea><button class="btn wide" data-act="copy">Скопировать</button>`;
