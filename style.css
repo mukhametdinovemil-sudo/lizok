@@ -279,6 +279,13 @@ textarea.code { width: 100%; height: 90px; margin-top: 8px; border-radius: 12px;
 #toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 14px); transform: translate(-50%, -200%); opacity: 0; background: var(--text); color: #fff; padding: 10px 18px; border-radius: 999px; font-weight: 700; transition: transform .3s, opacity .3s; z-index: 60; max-width: 90vw; text-align: center; }
 #toast.show { transform: translate(-50%, 0); opacity: 1; }
 
+.now-sec { color: var(--pink-d); }
+.island.now { border: 3px solid var(--pink); box-shadow: 0 0 0 5px rgba(255, 95, 162, .15), var(--shadow); }
+.cur-list { display: flex; flex-direction: column; gap: 6px; }
+.cur-btn { text-align: left; padding: 10px 12px; border-radius: 14px; background: var(--bg2); font-weight: 700; }
+.cur-btn small { display: block; font-weight: 400; color: var(--muted); }
+.cur-btn.on { background: var(--pink); color: #fff; }
+.cur-btn.on small { color: #ffe3ef; }
 .extra-sec { margin-top: 14px; color: #e67700; }
 .extra-note { margin: -4px 4px 4px; }
 .island.extra { border: 2px dashed #ffd43b; }
