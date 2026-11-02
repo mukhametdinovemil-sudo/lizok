@@ -9,6 +9,7 @@ const fresh = () => ({
   visited: [], islandsDone: [], chest: {}, tokens: 0, balloonBest: 0, current: null,
   // fun2.js
   exams: [], awards: [], teach: { runs: 0, best: 0 }, streakGot: [],
+  plan: null, tour: 0,
 });
 let S;
 function load() {
@@ -111,7 +112,7 @@ function route() {
   stopTimers();
   app.onclick = null;
   if (!S.mascot) return welcome();
-  const screens = { home, topic, lesson, practice, review, speed, stickers, parent, room, chest, balloons, teach, exam, awards, calendar };
+  const screens = { home, topic, lesson, practice, review, speed, stickers, parent, room, chest, balloons, teach, exam, awards, calendar, learn, games, pinky: pinkyHub };
   (screens[name] || home)(arg);
   window.scrollTo(0, 0);
 }
@@ -145,61 +146,153 @@ function topicProgress(t) {
   const got = t.lessons.reduce((s, l) => s + ((S.lessons[l.id] || {}).best || 0), 0);
   return { got, max: t.lessons.length * 3 };
 }
-function islandHTML(t, cls = '') {
-  const p = topicProgress(t);
-  if (!p) return `<button class="island soon" data-act="soon"><div class="isl-emoji">${t.emoji}</div><div class="isl-body"><div class="isl-title">${t.title}</div><div class="isl-sub">${t.sub}</div><div class="isl-soon">Скоро откроется ✨</div></div></button>`;
-  return `<button class="island${t.extra ? ' extra' : ''} ${cls}" data-go="#topic/${t.id}"><div class="isl-emoji">${t.emoji}</div><div class="isl-body"><div class="isl-title">${t.title}</div><div class="isl-sub">${t.sub}</div>
-    <div class="bar"><i style="width:${Math.round(100 * p.got / p.max)}%"></i></div><div class="isl-prog">★ ${p.got} из ${p.max}</div></div></button>`;
+// ═════════════ Нижнее меню и разделы ═════════════
+const TABS = [['home', '⭐', 'Сегодня'], ['learn', '🏝️', 'Учёба'], ['games', '🎮', 'Игры'], ['pinky', '🏠', 'Пинки']];
+function tabbar(active) {
+  const dot = { games: chestReady() || S.tokens > 0 };
+  return `<nav class="tabbar">${TABS.map(([id, e, t]) => `<button class="tab-b ${id === active ? 'on' : ''}" data-go="#${id}"><span>${e}</span>${t}${dot[id] ? '<i></i>' : ''}</button>`).join('')}</nav>`;
+}
+const hubTop = title => `<header class="top"><div class="top-title left">${title}</div><div class="pill">⭐ ${bal()}</div></header>`;
+const gcard = (go, e, t, s, badge, cls) => `<button class="g-card ${cls}" data-go="${go}"><span class="g-e">${e}</span><b>${t}</b><small>${s}</small>${badge ? `<em>${badge}</em>` : ''}</button>`;
+const mascotFace = () => (S.mascot === 'pinky' ? pinkyHTML('mini') : mascot().e);
+
+// план на сегодня: урок, сундучок, тренажёр
+function todayPlan() {
+  if (!S.plan || S.plan.date !== U.today()) S.plan = { date: U.today(), lesson: false, speed: false, bonus: false };
+  return S.plan;
+}
+// куда ведёт кнопка «Продолжить»
+function nextStep() {
+  const rv = reviewKeys().length;
+  if (rv >= 3) return { go: '#review', e: '🩹', title: 'Работа над ошибками', sub: `Исправим ${rv} ${U.plural(rv, 'ошибку', 'ошибки', 'ошибок')} — это быстро!` };
+  const cur = TOPICS.find(t => t.id === S.current), main = TOPICS.filter(t => !t.extra);
+  const order = cur ? [cur, ...main.filter(t => t !== cur)] : main;
+  const rec = l => S.lessons[l.id] || {};
+  for (const t of order) {
+    const L = t.lessons.find(l => !rec(l).runs);
+    if (L) return { go: '#lesson/' + L.id, e: t.emoji, title: t.title, sub: `Урок ${t.lessons.indexOf(L) + 1}. ${L.title}` };
+  }
+  for (const t of order) {
+    const L = t.lessons.find(l => (rec(l).best || 0) < 3);
+    if (L) return { go: '#practice/' + L.id, e: t.emoji, title: t.title, sub: `Урок ${t.lessons.indexOf(L) + 1}. ${L.title} — на 3 звезды!` };
+  }
+  const ex = TOPICS.filter(t => t.extra).find(t => t.lessons.some(l => !rec(l).runs));
+  if (ex) { const L = ex.lessons.find(l => !rec(l).runs); return { go: '#lesson/' + L.id, e: ex.emoji, title: ex.title, sub: `Сверх учебника: ${L.title}` }; }
+  return { go: '#exam', e: '📝', title: 'Пробная контрольная', sub: 'Все уроки пройдены! Проверь себя.' };
 }
 function home() {
-  const cur = TOPICS.find(t => t.id === S.current) || null;
-  const list = TOPICS.filter(t => t !== cur);
-  const hr = new Date().getHours();
-  const greet = hr < 12 ? 'Доброе утро' : hr < 18 ? 'Привет' : 'Добрый вечер';
-  const review = reviewKeys().length, streak = calcStreak();
-  app.innerHTML = `<div class="screen home">
-    ${mascotHTML(`${greet}, Лизок! ${U.pick(['Чем займёмся сегодня?', 'Готова к приключениям?', 'Вместе мы станем отличницей!', 'Я по тебе скучала!'])}`)}
+  const hr = new Date().getHours(), greet = hr < 12 ? 'Доброе утро' : hr < 18 ? 'Привет' : 'Добрый вечер';
+  const st = nextStep(), plan = todayPlan(), streak = calcStreak();
+  const items = [['📖', 'Урок', plan.lesson, st.go], ['🎁', 'Сундучок', !chestReady(), '#chest'], ['⚡', 'Тренажёр', plan.speed, '#speed']];
+  const all = items.every(x => x[2]);
+  app.innerHTML = `<div class="screen hub">
+    <div class="today-top">${mascotHTML(`${greet}, Лизок! ${U.pick(['Чем займёмся?', 'Готова к приключениям?', 'Я по тебе скучала!', 'Вместе мы станем отличницей!'])}`)}<div class="pill">⭐ ${bal()}</div></div>
+    <button class="continue" data-go="${st.go}"><span class="c-e">${st.e}</span><span class="c-body"><small>Продолжить</small><b>${st.title}</b><span>${st.sub}</span></span><span class="c-play">▶</span></button>
+    <div class="card plan"><h3>План на сегодня ${all ? '✅' : ''}</h3>
+      <div class="plan-row">${items.map(([e, t, done, go]) => `<button class="plan-i ${done ? 'done' : ''}" data-go="${go}"><span>${done ? '✅' : e}</span>${t}</button>`).join('')}</div>
+      <p class="muted center">${all ? 'Всё выполнено! Ты умничка 💖' : 'Сделай все три дела — получишь +5 ⭐'}</p></div>
     ${prizeHTML()}
-    <div class="stats-row">
-      <div class="stat"><b>⭐ ${bal()}</b><span>в копилке</span></div>
-      <div class="stat"><b>🎀 ${S.stickers.length}</b><span>${U.plural(S.stickers.length, 'наклейка', 'наклейки', 'наклеек')}</span></div>
-      <button class="stat" data-go="#calendar"><b>🔥 ${streak}</b><span>${U.plural(streak, 'день', 'дня', 'дней')} подряд 📅</span></button>
-    </div>
-    <div class="quick">
-      <button class="qbtn q1" data-go="#speed"><span>⚡</span>Тренажёр на скорость</button>
-      <button class="qbtn q2" data-go="#review" ${review ? '' : 'disabled'}><span>🩹</span>Работа над ошибками${review ? ` <em>${review}</em>` : ''}</button>
-      <button class="qbtn q3" data-go="#stickers"><span>🎀</span>Мои наклейки</button>
-      <button class="qbtn q4" data-go="#room"><span>🏠</span>Комната Пинки</button>
-      <button class="qbtn q5" data-go="#chest"><span class="${chestReady() ? 'wob' : ''}">🎁</span>Сундучок дня${chestReady() ? ' <em>!</em>' : ''}</button>
-      <button class="qbtn q6" data-go="#balloons"><span>🎈</span>Шарики${S.tokens ? ` <em>${S.tokens}</em>` : ''}</button>
-      <button class="qbtn q7" data-go="#teach"><span>👩‍🏫</span>Проверь Пинки</button>
-      <button class="qbtn q8" data-go="#exam"><span>📝</span>Контрольная</button>
-      <button class="qbtn q9" data-go="#awards"><span>📜</span>Грамоты${S.awards.length ? ` <em>${S.awards.length}</em>` : ''}</button>
-    </div>
-    ${cur ? `<h2 class="sec now-sec">📌 Сейчас в школе</h2><div class="islands">${islandHTML(cur, 'now')}</div>` : ''}
-    <h2 class="sec">${cur ? 'Остальные острова' : 'Острова знаний'}</h2>
-    <div class="islands">${list.map((t, i) => {
-      const sep = t.extra && !(list[i - 1] || {}).extra ? '<h2 class="sec extra-sec">⭐ Сверх учебника — для пятёрки с плюсом</h2><p class="muted extra-note">Этих тем нет в учебнике этого года. Они сложнее — попробуй, когда пройдёшь основные острова!</p>' : '';
-      return sep + islandHTML(t);
-    }).join('')}</div>
-    <div class="home-foot">
-      <button class="link" data-act="sound">${S.sound ? '🔔 Звук' : '🔕 Без звука'}</button>
-      <button class="link" data-act="mascot">🐾 Сменить помощника</button>
-      <button class="link" data-go="#parent">🔒 Для брата</button>
-    </div></div>`;
+    <button class="streak-row" data-go="#calendar"><span>🔥 <b>${streak}</b> ${U.plural(streak, 'день', 'дня', 'дней')} подряд</span><span class="muted">Календарь ›</span></button>
+    ${tabbar('home')}</div>`;
+  if (all && !plan.bonus) { plan.bonus = true; S.stars += 5; save(); later(() => celebrate('🌟', 'План выполнен!', 'Все дела на сегодня сделаны. +5 ⭐ — ты умничка!'), 500); }
   checkRewards();
   const pz = prizeProgress();
   if (pz && pz.done && !S.prize.celebrated) {
     S.prize.celebrated = true; save();
     later(() => celebrate('🎁', 'Приз заработан!', `«${U.esc(pz.name)}» — ты собрала ${pz.goal} ⭐! Покажи этот экран брату.`), 400);
   }
+  if (!S.tour) later(() => startTour(0), 600);
+}
+// остров, где сейчас стоит помощник на карте
+function hereTopic() {
+  return TOPICS.find(t => t.id === S.current) || TOPICS.filter(t => !t.extra).find(t => t.lessons.some(l => !(S.lessons[l.id] || {}).runs)) || null;
+}
+function mapHTML(list, gold) {
+  const STEP = 132, X = [24, 50, 76, 50], here = hereTopic();
+  const pts = list.map((t, i) => [X[i % 4], 66 + i * STEP]), H = 66 + (list.length - 1) * STEP + 92;
+  let d = `M ${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; d += ` C ${x0} ${y0 + STEP / 2}, ${x1} ${y1 - STEP / 2}, ${x1} ${y1}`; }
+  const nodes = list.map((t, i) => {
+    const p = topicProgress(t), done = S.islandsDone.includes(t.id), isHere = here && here.id === t.id;
+    return `<button class="mnode ${done ? 'done' : ''} ${isHere ? 'here' : ''} ${gold ? 'gold' : ''}" style="left:${pts[i][0]}%;top:${pts[i][1]}px" data-go="#topic/${t.id}">
+      <span class="mn-e">${t.emoji}${done ? '<i class="mn-crown">👑</i>' : ''}</span><span class="mn-t">${t.title}</span><span class="mn-p">★ ${p.got}/${p.max}</span>
+      ${isHere ? `<span class="map-pinky ${pts[i][0] > 60 ? 'pl' : 'pr'}">${mascotFace()}</span>` : ''}${S.current === t.id ? '<span class="mn-pin">📌 в школе</span>' : ''}</button>`;
+  }).join('');
+  return `<div class="map" style="height:${H}px"><svg class="map-path" viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true">
+    <path d="${d}" fill="none" stroke="${gold ? '#ffd43b' : '#ff9cc7'}" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 15" vector-effect="non-scaling-stroke"/></svg>${nodes}</div>`;
+}
+function learn() {
+  const rv = reviewKeys().length;
+  app.innerHTML = `<div class="screen hub">${hubTop('🏝️ Учёба')}
+    <div class="learn-btns"><button class="mini-card" data-go="#exam"><span>📝</span>Контрольная</button>
+      <button class="mini-card" data-go="#review" ${rv ? '' : 'disabled'}><span>🩹</span>Ошибки${rv ? ` <em>${rv}</em>` : ''}</button></div>
+    ${mapHTML(TOPICS.filter(t => !t.extra), false)}
+    <h2 class="sec extra-sec">⭐ Сверх учебника — для пятёрки с плюсом</h2>
+    <p class="muted extra-note">Этих тем нет в учебнике этого года. Они сложнее — попробуй, когда пройдёшь основные острова!</p>
+    ${mapHTML(TOPICS.filter(t => t.extra), true)}
+    ${tabbar('learn')}</div>`;
+}
+function games() {
+  const cr = chestReady();
+  app.innerHTML = `<div class="screen hub">${hubTop('🎮 Игры')}
+    ${mascotHTML('Здесь игры и награды. Шарики открываются за пройденные уроки, а сундучок — раз в день!')}
+    <div class="g-grid">
+      ${gcard('#chest', '🎁', 'Сундучок дня', cr ? 'Ждёт тебя сегодня!' : 'Открыт. Приходи завтра', cr ? '!' : '', 'gc1')}
+      ${gcard('#balloons', '🎈', 'Шарики', S.tokens ? `Игр в запасе: ${S.tokens}` : 'Пройди урок — откроется', S.tokens || '', 'gc2')}
+      ${gcard('#teach', '👩‍🏫', 'Проверь Пинки', 'Найди мои ошибки', '', 'gc3')}
+      ${gcard('#speed', '⚡', 'Тренажёр', '60 секунд на скорость', '', 'gc4')}
+    </div>${tabbar('games')}</div>`;
+}
+function pinkyHub() {
+  const st = calcStreak();
+  app.innerHTML = `<div class="screen hub">${hubTop('🏠 Пинки')}
+    <button class="room-btn" data-go="#room">${roomScene()}<span class="room-cta">Нарядить и обставить ›</span></button>
+    <div class="g-grid">
+      ${gcard('#stickers', '🎀', 'Наклейки', `${S.stickers.length} ${U.plural(S.stickers.length, 'наклейка', 'наклейки', 'наклеек')}`, '', 'gc5')}
+      ${gcard('#awards', '📜', 'Грамоты', S.awards.length ? `${S.awards.length} ${U.plural(S.awards.length, 'грамота', 'грамоты', 'грамот')}` : 'Пока нет — впереди!', '', 'gc6')}
+      ${gcard('#calendar', '📅', 'Календарь', `🔥 ${st} ${U.plural(st, 'день', 'дня', 'дней')} подряд`, '', 'gc7')}
+      ${gcard('#room', '🛍️', 'Магазин', `В копилке ⭐ ${bal()}`, '', 'gc8')}
+    </div>
+    <div class="home-foot">
+      <button class="link" data-act="sound">${S.sound ? '🔔 Звук' : '🔕 Без звука'}</button>
+      <button class="link" data-act="mascot">🐾 Помощник</button>
+      <button class="link" data-act="tour">❓ Подсказки</button>
+      <button class="link" data-go="#parent">🔒 Для брата</button>
+    </div>${tabbar('pinky')}</div>`;
   app.onclick = e => {
     const b = e.target.closest('[data-act]');
     if (!b) return;
-    if (b.dataset.act === 'sound') { S.sound = !S.sound; save(); home(); }
+    if (b.dataset.act === 'sound') { S.sound = !S.sound; save(); pinkyHub(); }
     if (b.dataset.act === 'mascot') welcome();
-    if (b.dataset.act === 'soon') toast('Этот остров скоро откроется! 🌸');
+    if (b.dataset.act === 'tour') { S.tour = 0; save(); go('#home'); }
   };
+}
+
+// ═════════════ Знакомство при первом запуске ═════════════
+const TOUR = [
+  { sel: '.continue', text: 'Это главная кнопка. Нажимай «Продолжить» — я сама подберу, чем заняться!' },
+  { sel: '.plan', text: 'План на день: урок, сундучок и тренажёр. Сделаешь всё — получишь бонусные звёзды!' },
+  { sel: '.today-top .pill', text: 'Это копилка ⭐. Звёзды дают за ответы с первого раза. На них можно наряжать меня!' },
+  { sel: '.tabbar', text: 'Внизу меню: «Учёба» — острова и контрольные, «Игры» — шарики и сундучок, «Пинки» — моя комната и грамоты.' },
+];
+function startTour(i) {
+  document.querySelectorAll('.tour').forEach(x => x.remove());
+  if (i >= TOUR.length) { S.tour = 1; save(); toast('Удачи, Лизок! 💖'); return; }
+  const el = document.querySelector(TOUR[i].sel);
+  if (!el) return startTour(i + 1);
+  el.scrollIntoView({ block: 'center' });
+  const r = el.getBoundingClientRect(), pd = 8, below = r.top + r.height / 2 < window.innerHeight / 2;
+  const o = document.createElement('div');
+  o.className = 'tour';
+  o.innerHTML = `<div class="tour-hole" style="left:${r.left - pd}px;top:${r.top - pd}px;width:${r.width + 2 * pd}px;height:${r.height + 2 * pd}px"></div>
+    <div class="tour-box" style="${below ? `top:${r.bottom + 18}px` : `bottom:${window.innerHeight - r.top + 18}px`}">${mascotHTML(TOUR[i].text)}
+      <div class="tour-btns"><button class="link" data-t="skip">Пропустить</button><button class="btn small" data-t="next">${i === TOUR.length - 1 ? 'Понятно!' : 'Дальше →'} ${i + 1}/${TOUR.length}</button></div></div>`;
+  document.body.appendChild(o);
+  o.addEventListener('click', e => {
+    const b = e.target.closest('[data-t]');
+    if (!b) return;
+    if (b.dataset.t === 'skip') { o.remove(); S.tour = 1; save(); } else startTour(i + 1);
+  });
 }
 
 // ═════════════ Тема: список уроков ═════════════
@@ -207,7 +300,7 @@ function topic(id) {
   const t = TOPICS.find(x => x.id === id);
   if (!t || !t.lessons.length) return go('#home');
   if (!S.visited.includes(id)) { S.visited.push(id); save(); rocketTo(t); }
-  app.innerHTML = `<div class="screen">${header(t.emoji + ' ' + t.title, '#home')}
+  app.innerHTML = `<div class="screen">${header(t.emoji + ' ' + t.title, '#learn')}
     ${mascotHTML('В каждом уроке сначала короткая теория, потом задания. Звёздочки ставлю за ответы с первого раза!')}
     <div class="lessons">${t.lessons.map((l, i) => {
       const r = S.lessons[l.id] || {};
@@ -283,7 +376,7 @@ function review() {
     const [lessonId, level, gi] = keys[i % keys.length].split(':');
     items.push({ lessonId, level: Number(level), gi: Number(gi) });
   }
-  startSession({ mode: 'review', title: 'Работа над ошибками', items: U.shuffle(items), back: '#home' });
+  startSession({ mode: 'review', title: 'Работа над ошибками', items: U.shuffle(items), back: '#learn' });
 }
 function startSession(o) {
   P = Object.assign(o, { pos: 0, firstOk: 0, earned: 0, extra: 0, startedAt: Date.now() });
@@ -460,6 +553,7 @@ function finish() {
     if (n === 3 && !r.got3) { r.got3 = true; got.push(giveSticker()); }
     r.runs++; r.best = Math.max(r.best, n); r.done += total; r.ok += P.firstOk; r.last = Date.now();
     S.tokens = Math.min(5, (S.tokens || 0) + 1);
+    todayPlan().lesson = true;
     const tp = TOPICS.find(t => t.id === P.lesson.topic);
     if (tp && tp.lessons.every(l => (S.lessons[l.id] || {}).runs) && !S.islandsDone.includes(tp.id)) {
       S.islandsDone.push(tp.id); S.stars += 10; island = tp;
@@ -510,7 +604,7 @@ const SPEED_MODES = {
 const SPEED_TIME = 60;
 function speed(modeArg) {
   if (modeArg && SPEED_MODES[modeArg]) return speedRun(modeArg);
-  app.innerHTML = `<div class="screen">${header('⚡ Тренажёр на скорость', '#home')}
+  app.innerHTML = `<div class="screen">${header('⚡ Тренажёр на скорость', '#games')}
     ${mascotHTML(`За ${SPEED_TIME} секунд реши как можно больше примеров. Ответ проверяется сам — просто набирай цифры!`)}
     <div class="modes">${Object.entries(SPEED_MODES).map(([k, m]) => {
       const r = S.speed[k] || {};
@@ -538,6 +632,7 @@ function speedRun(mode) {
     let st = null;
     if (record && score >= 10) st = giveSticker();
     r.best = Math.max(r.best, score); r.runs++; r.last = [score, ...r.last].slice(0, 10);
+    todayPlan().speed = true;
     const d = day(); d.tasks += score + wrong; d.ok += score;
     S.stars += Math.floor(score / 5);
     save();
@@ -591,7 +686,7 @@ function speedRun(mode) {
 // ═════════════ Наклейки ═════════════
 function stickers() {
   const owned = S.stickers;
-  app.innerHTML = `<div class="screen">${header('🎀 Мои наклейки', '#home')}
+  app.innerHTML = `<div class="screen">${header('🎀 Мои наклейки', '#pinky')}
     ${mascotHTML(owned.length ? `У тебя ${owned.length} ${U.plural(owned.length, 'наклейка', 'наклейки', 'наклеек')}! Наклейки дают за пройденные уроки, за 3 звезды и за рекорды в тренажёре.` : 'Пока наклеек нет. Пройди первый урок — и получишь первую!')}
     <div class="album">${STICKERS.map(s => `<div class="slot ${owned.includes(s) ? 'got' : ''}">${owned.includes(s) ? s : '?'}</div>`).join('')}</div>
     ${owned.length > STICKERS.length ? `<p class="center">И ещё ${owned.length - STICKERS.length} повторных!</p>` : ''}</div>`;
@@ -604,7 +699,7 @@ function parent() {
   let pin = '', first = null;
   const setup = !S.pin;
   const draw = (msg = '') => {
-    app.innerHTML = `<div class="screen">${header('🔒 Для брата', '#home')}
+    app.innerHTML = `<div class="screen">${header('🔒 Для брата', '#pinky')}
       <div class="card center">
         <h2>${setup ? (first ? 'Повторите ПИН-код' : 'Придумайте ПИН-код') : 'Введите ПИН-код'}</h2>
         <p class="muted">${setup ? 'Из 4 цифр. По нему вы будете заходить в статистику.' : 'Этот раздел для брата.'}</p>
@@ -642,7 +737,7 @@ function parentDash() {
   const weak = Object.values(S.gens).filter(g => g.tries >= 2 && g.wrong > 0)
     .sort((a, b) => b.wrong / b.tries - a.wrong / a.tries).slice(0, 6);
   const fmtDate = t => { const d = new Date(t); return d.getDate() + '.' + String(d.getMonth() + 1).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
-  app.innerHTML = `<div class="screen parent">${header('📊 Статистика Лизы', '#home')}
+  app.innerHTML = `<div class="screen parent">${header('📊 Статистика Лизы', '#pinky')}
     <div class="card">
       <div class="kpis">
         <div><b>${Math.round(all.sec / 60)}</b><span>минут занятий</span></div>
