@@ -279,6 +279,12 @@ textarea.code { width: 100%; height: 90px; margin-top: 8px; border-radius: 12px;
 #toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 14px); transform: translate(-50%, -200%); opacity: 0; background: var(--text); color: #fff; padding: 10px 18px; border-radius: 999px; font-weight: 700; transition: transform .3s, opacity .3s; z-index: 60; max-width: 90vw; text-align: center; }
 #toast.show { transform: translate(-50%, 0); opacity: 1; }
 
+/* рисунки в заданиях геометрии */
+.fig { display: block; width: 100%; max-width: 260px; height: auto; margin: 4px auto; background: #fff; border-radius: 14px; }
+.fig.sm { max-width: 31%; display: inline-block; margin: 0; }
+.fig-row { display: flex; gap: 4px; justify-content: space-between; }
+.choices .choice { font-size: 19px; }
+
 /* ═════════ Развлечения ═════════ */
 .q4 { background: linear-gradient(160deg, #ffa8d0, #f06595); }
 .q5 { background: linear-gradient(160deg, #ffd43b, #fab005); }
