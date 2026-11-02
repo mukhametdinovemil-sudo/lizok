@@ -7,9 +7,9 @@ const TOPICS = [
   { id: 't4', title: 'Сложение и вычитание', sub: 'Столбиком, уравнения, доли', emoji: '➕', lessons: LESSONS_T4 },
   { id: 't6', title: 'Текстовые задачи', sub: 'Цена, количество, стоимость', emoji: '🧁', lessons: [] },
   { id: 't7', title: 'Геометрия', sub: 'Периметр, площадь, углы', emoji: '📐', lessons: [] },
-  { id: 't8', title: 'Скорость, время, расстояние', sub: 'Следующая четверть', emoji: '🚲', lessons: [] },
-  { id: 't9', title: 'Круглые числа', sub: 'Умножение и деление на 10, 20, 300… (след. четверть)', emoji: '🎯', lessons: [] },
-  { id: 't10', title: 'Задачи на движение', sub: 'Навстречу и в разные стороны (след. четверть)', emoji: '🚂', lessons: [] },
+  { id: 't8', title: 'Скорость, время, расстояние', sub: 'Следующая четверть', emoji: '🚲', lessons: LESSONS_T8 },
+  { id: 't9', title: 'Круглые числа и двузначные', sub: 'На 20, 300…, умножение на двузначное (след. четверть)', emoji: '🎯', lessons: LESSONS_T9 },
+  { id: 't10', title: 'Задачи на движение', sub: 'Навстречу, в разные стороны, вдогонку (след. четверть)', emoji: '🚂', lessons: LESSONS_T10 },
 ];
 const LESSON_BY_ID = {};
 TOPICS.forEach(t => t.lessons.forEach(l => { l.topic = t.id; LESSON_BY_ID[l.id] = l; }));
