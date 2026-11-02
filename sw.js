@@ -1,10 +1,10 @@
 // Работа без интернета: файлы приложения сохраняются в телефоне.
 // При каждом запуске показываем сохранённую версию и тихо проверяем, нет ли новой.
-const CACHE = 'lizok-v8';
+const CACHE = 'lizok-v9';
 const FILES = [
   './', './index.html', './style.css', './manifest.webmanifest',
   './js/util.js', './js/column.js', './js/topics/t5_umnozh_delenie.js', './js/topics/t3_velichiny.js', './js/topics/t2_bolshie_chisla.js', './js/topics/t4_slozh_vych.js', './js/topics/t8_dvizhenie.js', './js/topics/t9_kruglye.js', './js/topics/t1_povtorenie.js', './js/topics/t6_zadachi.js', './js/topics/t7_geometriya.js',
-  './js/topics/index.js', './js/fun.js', './js/app.js',
+  './js/topics/index.js', './js/fun.js', './js/fun2.js', './js/app.js',
   './img/pinky.svg', './img/bg-tile.svg',
   './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png',
 ];
