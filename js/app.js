@@ -10,6 +10,8 @@ const fresh = () => ({
   // fun2.js
   exams: [], awards: [], teach: { runs: 0, best: 0 }, streakGot: [],
   plan: null, tour: 0,
+  // econ.js и игры для отдыха
+  gm: {}, lastSeen: null, fined: 0, fineLog: [], finesOn: true,
 });
 let S;
 function load() {
@@ -110,11 +112,15 @@ function route() {
   const h = location.hash.replace(/^#/, '') || 'home';
   const [name, arg] = h.split('/');
   stopTimers();
+  leaveGame();
   app.onclick = null;
   if (!S.mascot) return welcome();
-  const screens = { home, topic, lesson, practice, review, speed, stickers, parent, room, chest, balloons, teach, exam, awards, calendar, learn, games, pinky: pinkyHub };
+  const screens = { home, topic, lesson, practice, review, speed, stickers, parent, room, chest, balloons, teach, exam, awards, calendar, learn, games, pinky: pinkyHub, blocks, puzzles, jump };
   (screens[name] || home)(arg);
+  const sc = app.firstElementChild;
+  if (sc) sc.classList.add('enter'); // плавное появление экрана (games.css)
   window.scrollTo(0, 0);
+  missedCheck(); // штраф за пропущенные дни (econ.js)
 }
 document.addEventListener('click', e => {
   const g = e.target.closest('[data-go]');
@@ -193,6 +199,7 @@ function home() {
       <p class="muted center">${all ? 'Всё выполнено! Ты умничка 💖' : 'Сделай все три дела — получишь +5 ⭐'}</p></div>
     ${prizeHTML()}
     <button class="streak-row" data-go="#calendar"><span>🔥 <b>${streak}</b> ${U.plural(streak, 'день', 'дня', 'дней')} подряд</span><span class="muted">Календарь ›</span></button>
+    ${S.finesOn !== false ? `<p class="muted center miss-note">🗓️ Заходи каждый день: за пропущенный день из копилки улетает ${ECON.fine} ⭐</p>` : ''}
     ${tabbar('home')}</div>`;
   if (all && !plan.bonus) { plan.bonus = true; S.stars += 5; save(); later(() => celebrate('🌟', 'План выполнен!', 'Все дела на сегодня сделаны. +5 ⭐ — ты умничка!'), 500); }
   checkRewards();
@@ -233,15 +240,25 @@ function learn() {
     ${tabbar('learn')}</div>`;
 }
 function games() {
-  const cr = chestReady();
+  const cr = chestReady(), gs = gameStarsToday(), gm = S.gm || {};
   app.innerHTML = `<div class="screen hub">${hubTop('🎮 Игры')}
-    ${mascotHTML('Здесь игры и награды. Шарики открываются за пройденные уроки, а сундучок — раз в день!')}
+    ${mascotHTML('Игры с математикой дают много звёзд. Игры для отдыха — чуть-чуть, зато весело!')}
+    <h2 class="sec g-sec">🧮 С математикой <small>много ⭐</small></h2>
     <div class="g-grid">
       ${gcard('#chest', '🎁', 'Сундучок дня', cr ? 'Ждёт тебя сегодня!' : 'Открыт. Приходи завтра', cr ? '!' : '', 'gc1')}
       ${gcard('#balloons', '🎈', 'Шарики', S.tokens ? `Игр в запасе: ${S.tokens}` : 'Пройди урок — откроется', S.tokens || '', 'gc2')}
       ${gcard('#teach', '👩‍🏫', 'Проверь Пинки', 'Найди мои ошибки', '', 'gc3')}
       ${gcard('#speed', '⚡', 'Тренажёр', '60 секунд на скорость', '', 'gc4')}
-    </div>${tabbar('games')}</div>`;
+    </div>
+    <h2 class="sec g-sec">🌈 Для отдыха <small>${gs < ECON.cap ? `⭐ сегодня: ${gs} из ${ECON.cap}` : 'все ⭐ на сегодня собраны'}</small></h2>
+    <div class="cap-bar" aria-label="Звёзды из игр для отдыха сегодня">${Array.from({ length: ECON.cap }, (_, i) => `<i class="${i < gs ? 'on' : ''}" style="animation-delay:${(0.3 + i * 0.08).toFixed(2)}s">⭐</i>`).join('')}</div>
+    <div class="g-grid">
+      ${gcard('#blocks', '<span class="mb"><i></i><i></i><i></i><i></i></span>', 'Блоки', `Рекорд: ${U.fmt((gm.blocks || {}).best || 0)}`, '', 'gc9')}
+      ${gcard('#puzzles', '🧠', 'Головоломки', 'Тренируй логику', '', 'gc10')}
+      ${gcard('#jump', '<img class="m-img jp-ic" src="img/pinky.svg" alt="">', 'Прыжки Пинки', `Прыгай по облачкам всё выше! Рекорд: ${U.fmt((gm.jump || {}).best || 0)} м`, '', 'gc11 wide')}
+    </div>
+    <p class="muted center">${gs < ECON.cap ? `Из игр для отдыха — не больше ${ECON.cap} ⭐ в день. Больше звёзд — за задания по математике!` : 'Играть можно и дальше — просто для удовольствия 💖'}</p>
+    ${tabbar('games')}</div>`;
 }
 function pinkyHub() {
   const st = calcStreak();
@@ -273,7 +290,7 @@ const TOUR = [
   { sel: '.continue', text: 'Это главная кнопка. Нажимай «Продолжить» — я сама подберу, чем заняться!' },
   { sel: '.plan', text: 'План на день: урок, сундучок и тренажёр. Сделаешь всё — получишь бонусные звёзды!' },
   { sel: '.today-top .pill', text: 'Это копилка ⭐. Звёзды дают за ответы с первого раза. На них можно наряжать меня!' },
-  { sel: '.tabbar', text: 'Внизу меню: «Учёба» — острова и контрольные, «Игры» — шарики и сундучок, «Пинки» — моя комната и грамоты.' },
+  { sel: '.tabbar', text: 'Внизу меню: «Учёба» — острова и контрольные, «Игры» — шарики, сундучок и игры для отдыха, «Пинки» — моя комната и грамоты.' },
 ];
 function startTour(i) {
   document.querySelectorAll('.tour').forEach(x => x.remove());
@@ -769,6 +786,7 @@ function parentDash() {
       <button class="btn ghost wide" data-act="export">Показать код прогресса</button>
       <button class="btn ghost wide" data-act="import">Восстановить из кода</button>
       <div id="io"></div></div>
+    ${econAdmin()}
     <div class="card"><h3>Настройки</h3>
       <button class="btn ghost wide" data-act="pin">Сменить ПИН-код</button>
       <button class="btn danger wide" data-act="reset">Сбросить весь прогресс</button>
@@ -778,6 +796,7 @@ function parentDash() {
     if (!b) return;
     const a = b.dataset.act, io = document.getElementById('io');
     if (prizeAction(a)) { if (a !== 'prize-set' || S.prize) parentDash(); return; }
+    if (econAction(a)) { parentDash(); return; }
     if (a === 'cur') { S.current = b.dataset.t || null; save(); toast(S.current ? 'Тема отмечена 📌' : 'Отметка снята'); parentDash(); return; }
     if (a === 'export') {
       const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
@@ -811,7 +830,10 @@ let lastAct = Date.now(), tick = 0;
 document.addEventListener('pointerdown', () => { lastAct = Date.now(); }, true);
 setInterval(() => {
   if (document.visibilityState === 'visible' && Date.now() - lastAct < 60000 && S.mascot) {
-    day().sec += 5;
+    // время в играх для отдыха считаем отдельно, чтобы брат видел честные «минуты занятий»
+    const d = day();
+    if (REST_GAMES.includes(location.hash.replace(/^#/, '').split('/')[0])) d.play = (d.play || 0) + 5;
+    else d.sec += 5;
     if (++tick % 6 === 0) save();
   }
 }, 5000);
