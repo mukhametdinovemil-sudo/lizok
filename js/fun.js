@@ -39,7 +39,8 @@ const SHOP = [
   { id: 'w-space', kind: 'wall', e: '🌌', name: 'Космос', price: 50, bg: 'radial-gradient(circle at 30% 20%,#7048e8,#2b1a5a)' },
 ];
 const ITEM = Object.fromEntries(SHOP.map(i => [i.id, i]));
-const bal = () => Math.max(0, S.stars - S.spent);
+// копилка: заработано − потрачено − списано за пропущенные дни (econ.js)
+const bal = () => Math.max(0, S.stars - S.spent - (S.fined || 0));
 
 // ═════════════ Пинки в нарядах ═════════════
 function pinkyHTML(cls = '') {
@@ -174,7 +175,7 @@ function prizeAdmin() {
       <input id="pz-name" class="inp" maxlength="40" placeholder="Например: поход в кино">
       <label class="muted">Сколько звёзд нужно собрать:</label>
       <input id="pz-goal" class="inp" type="number" inputmode="numeric" min="10" max="5000" value="300">
-      <p class="muted">Ориентир: урок даёт до 10 ⭐, сундучок — 5–12 ⭐. 300 ⭐ — это примерно 2–3 недели занятий.</p>
+      <p class="muted">Ориентир: урок даёт до 10 ⭐, сундучок — 5–12 ⭐, игры для отдыха — не больше 5 ⭐ в день. 300 ⭐ — это примерно 2–3 недели занятий.</p>
       <button class="btn wide" data-act="prize-set">Назначить приз</button>`}
     ${S.prizesDone.length ? `<p class="muted">Выданные призы: ${S.prizesDone.map(x => U.esc(x.name)).join(', ')}</p>` : ''}</div>`;
 }
