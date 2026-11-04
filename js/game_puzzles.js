@@ -330,8 +330,8 @@ function slideRun() {
   const draw = () => {
     for (let t = 1; t < NN; t++) {
       const i = pos(t), e = tEl[t];
-      e.style.left = (i % N) * (100 / N) + '%';
-      e.style.top = Math.floor(i / N) * (100 / N) + '%';
+      // плитка двигается сдвигом (transform): телефон делает это без пересчёта страницы
+      e.style.transform = `translate(${(i % N) * 100}%, ${Math.floor(i / N) * 100}%)`;
       e.classList.toggle('ok', i === t - 1);
     }
     document.getElementById('slm').textContent = 'Ходов: ' + moves;
