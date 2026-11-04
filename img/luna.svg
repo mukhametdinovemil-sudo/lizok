@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Луна: совушка-помощница (свой персонаж) -->
+  <path d="M30 42 L22 12 L50 28 Z" fill="#8f6ff0"/>
+  <path d="M90 42 L98 12 L70 28 Z" fill="#8f6ff0"/>
+  <path d="M20 62 q-10 24 8 38 q8 -18 4 -38 z" fill="#8f6ff0"/>
+  <path d="M100 62 q10 24 -8 38 q-8 -18 -4 -38 z" fill="#8f6ff0"/>
+  <ellipse cx="60" cy="64" rx="39" ry="46" fill="#b197fc"/>
+  <ellipse cx="60" cy="82" rx="26" ry="26" fill="#f6f1ff"/>
+  <path d="M46 78 q4 5 8 0 M66 78 q4 5 8 0 M56 90 q4 5 8 0" stroke="#d0bfff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="43" cy="50" r="16" fill="#fff"/>
+  <circle cx="77" cy="50" r="16" fill="#fff"/>
+  <circle cx="45" cy="51" r="9" fill="#3b2a77"/>
+  <circle cx="75" cy="51" r="9" fill="#3b2a77"/>
+  <circle cx="48.500" cy="47.500" r="3.500" fill="#fff"/>
+  <circle cx="78.500" cy="47.500" r="3.500" fill="#fff"/>
+  <circle cx="42" cy="55" r="1.600" fill="#fff"/>
+  <circle cx="72" cy="55" r="1.600" fill="#fff"/>
+  <circle cx="26" cy="64" r="5.500" fill="#ffc2dc"/>
+  <circle cx="94" cy="64" r="5.500" fill="#ffc2dc"/>
+  <path d="M53 60 L67 60 L60 71 Z" fill="#ffa94d"/>
+  <path d="M65 20 a9 9 0 1 0 -1 15 a7.500 7.500 0 1 1 1 -15 z" fill="#ffd43b"/>
+  <path d="M44 109 q4 6 8 0 M68 109 q4 6 8 0" stroke="#ffa94d" stroke-width="4" fill="none" stroke-linecap="round"/>
+</svg>
