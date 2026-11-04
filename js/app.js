@@ -12,6 +12,8 @@ const fresh = () => ({
   plan: null, tour: 0,
   // econ.js и игры для отдыха
   gm: {}, lastSeen: null, fined: 0, fineLog: [], finesOn: true,
+  // helper.js: открывала ли помощницу, сколько вопросов задала, вопросы без ответа (для брата)
+  helper: { seen: false, n: 0, log: [] },
 });
 let S;
 function load() {
@@ -57,20 +59,38 @@ function toast(text) {
   el.textContent = text; el.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
+// конфетти на одном холсте: 60 отдельных анимируемых элементов страницы на телефоне давали рывок
 function confetti() {
-  const box = document.createElement('div');
-  box.className = 'confetti';
-  const colors = ['#ff5fa2', '#ffb3d1', '#b197fc', '#ffd43b', '#63e6be', '#ff8fab'];
-  for (let i = 0; i < 60; i++) {
-    const p = document.createElement('i');
-    p.style.left = Math.random() * 100 + '%';
-    p.style.background = U.pick(colors);
-    p.style.animationDelay = Math.random() * 0.6 + 's';
-    p.style.animationDuration = 1.8 + Math.random() * 1.4 + 's';
-    box.appendChild(p);
-  }
-  document.body.appendChild(box);
-  setTimeout(() => box.remove(), 3800);
+  const W = window.innerWidth, H = window.innerHeight, dpr = Math.min(1.5, window.devicePixelRatio || 1);
+  const cv = document.createElement('canvas');
+  cv.className = 'confetti';
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  document.body.appendChild(cv);
+  const ctx = cv.getContext('2d'), colors = ['#ff5fa2', '#ffb3d1', '#b197fc', '#ffd43b', '#63e6be', '#ff8fab'];
+  const bits = Array.from({ length: 60 }, () => ({ x: Math.random() * W, c: U.pick(colors), wait: Math.random() * 600, dur: 1800 + Math.random() * 1400, a: Math.random() * 6.3 }));
+  let t0 = 0;
+  const step = now => {
+    if (!cv.isConnected) return;
+    if (!t0) t0 = now;
+    const t = now - t0;
+    let live = false;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    for (const b of bits) {
+      const k = (t - b.wait) / b.dur;
+      if (k >= 1) continue;
+      live = true;
+      if (k < 0) continue;
+      const a = b.a + k * 12.6, co = Math.cos(a), si = Math.sin(a), flip = 0.35 + 0.65 * Math.abs(Math.cos(b.a + k * 18));
+      ctx.setTransform(co * dpr * flip, si * dpr * flip, -si * dpr, co * dpr, b.x * dpr, (-20 + k * (H * 1.1 + 20)) * dpr);
+      ctx.fillStyle = b.c;
+      ctx.fillRect(-5, -8, 10, 16);
+    }
+    if (live) requestAnimationFrame(step); else cv.remove();
+  };
+  requestAnimationFrame(step);
+  setTimeout(() => cv.remove(), 3800);
 }
 function mascotHTML(text, mood = '') {
   const face = S.mascot === 'pinky' ? pinkyHTML('mini') : mascot().e;
@@ -113,6 +133,7 @@ function route() {
   const [name, arg] = h.split('/');
   stopTimers();
   leaveGame();
+  closeHelper();
   app.onclick = null;
   if (!S.mascot) return welcome();
   const screens = { home, topic, lesson, practice, review, speed, stickers, parent, room, chest, balloons, teach, exam, awards, calendar, learn, games, pinky: pinkyHub, blocks, puzzles, jump };
@@ -156,7 +177,8 @@ function topicProgress(t) {
 const TABS = [['home', '⭐', 'Сегодня'], ['learn', '🏝️', 'Учёба'], ['games', '🎮', 'Игры'], ['pinky', '🏠', 'Пинки']];
 function tabbar(active) {
   const dot = { games: chestReady() || S.tokens > 0 };
-  return `<nav class="tabbar">${TABS.map(([id, e, t]) => `<button class="tab-b ${id === active ? 'on' : ''}" data-go="#${id}"><span>${e}</span>${t}${dot[id] ? '<i></i>' : ''}</button>`).join('')}</nav>`;
+  return `<nav class="tabbar">${TABS.map(([id, e, t]) => `<button class="tab-b ${id === active ? 'on' : ''}" data-go="#${id}"><span>${e}</span>${t}${dot[id] ? '<i></i>' : ''}</button>`).join('')}
+    <button class="tab-b" data-helper="hub"><span><img class="m-img" src="${HELPER.img}" alt=""></span>${HELPER.name}${S.helper.seen ? '' : '<i></i>'}</button></nav>`;
 }
 const hubTop = title => `<header class="top"><div class="top-title left">${title}</div><div class="pill">⭐ ${bal()}</div></header>`;
 const gcard = (go, e, t, s, badge, cls) => `<button class="g-card ${cls}" data-go="${go}"><span class="g-e">${e}</span><b>${t}</b><small>${s}</small>${badge ? `<em>${badge}</em>` : ''}</button>`;
@@ -290,7 +312,7 @@ const TOUR = [
   { sel: '.continue', text: 'Это главная кнопка. Нажимай «Продолжить» — я сама подберу, чем заняться!' },
   { sel: '.plan', text: 'План на день: урок, сундучок и тренажёр. Сделаешь всё — получишь бонусные звёзды!' },
   { sel: '.today-top .pill', text: 'Это копилка ⭐. Звёзды дают за ответы с первого раза. На них можно наряжать меня!' },
-  { sel: '.tabbar', text: 'Внизу меню: «Учёба» — острова и контрольные, «Игры» — шарики, сундучок и игры для отдыха, «Пинки» — моя комната и грамоты.' },
+  { sel: '.tabbar', text: 'Внизу меню: «Учёба» — острова и контрольные, «Игры» — шарики, сундучок и игры для отдыха, «Пинки» — моя комната и грамоты, а совушке Луне можно задать любой вопрос.' },
 ];
 function startTour(i) {
   document.querySelectorAll('.tour').forEach(x => x.remove());
@@ -345,6 +367,7 @@ function lesson(id) {
         ${last ? '<button class="btn big" data-act="start">Начать задания ✨</button>' : '<button class="btn" data-act="next">Дальше →</button>'}
       </div>
       ${done && !last ? '<button class="link center" data-act="start">Я помню теорию — сразу к заданиям →</button>' : ''}
+      <button class="link center" data-helper="theory" data-l="${id}" data-c="${idx}">🦉 Непонятно? Спроси ${HELPER.nameAcc}</button>
     </div>`;
     if (c.demo) {
       document.getElementById('demo').appendChild(Column.viewer(Column.model(c.demo)));
@@ -445,7 +468,7 @@ function drawTask(msg) {
       ${P.tries > 0 || P.showHint ? `<div class="hint">💡 ${t.hint}</div>` : ''}
     </div>
     ${answer}
-    ${P.mode !== 'exam' && P.tries === 0 && !P.showHint ? '<button class="link center" data-act="hint">💡 Подсказка</button>' : ''}
+    ${P.mode !== 'exam' ? `<div class="task-help">${P.tries === 0 && !P.showHint ? '<button class="link" data-act="hint">💡 Подсказка</button>' : ''}<button class="link" data-helper="task">🦉 Спросить ${HELPER.nameAcc}</button></div>` : ''}
     ${P.mode === 'exam' ? '<p class="note">Контрольная: без подсказок, одна попытка</p>' : ''}
     ${keypad}
     <div id="sheet"></div></div>`;
@@ -787,6 +810,7 @@ function parentDash() {
       <button class="btn ghost wide" data-act="import">Восстановить из кода</button>
       <div id="io"></div></div>
     ${econAdmin()}
+    ${helperAdmin()}
     <div class="card"><h3>Настройки</h3>
       <button class="btn ghost wide" data-act="pin">Сменить ПИН-код</button>
       <button class="btn danger wide" data-act="reset">Сбросить весь прогресс</button>
@@ -796,7 +820,7 @@ function parentDash() {
     if (!b) return;
     const a = b.dataset.act, io = document.getElementById('io');
     if (prizeAction(a)) { if (a !== 'prize-set' || S.prize) parentDash(); return; }
-    if (econAction(a)) { parentDash(); return; }
+    if (econAction(a) || helperAction(a)) { parentDash(); return; }
     if (a === 'cur') { S.current = b.dataset.t || null; save(); toast(S.current ? 'Тема отмечена 📌' : 'Отметка снята'); parentDash(); return; }
     if (a === 'export') {
       const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
@@ -831,10 +855,11 @@ document.addEventListener('pointerdown', () => { lastAct = Date.now(); }, true);
 setInterval(() => {
   if (document.visibilityState === 'visible' && Date.now() - lastAct < 60000 && S.mascot) {
     // время в играх для отдыха считаем отдельно, чтобы брат видел честные «минуты занятий»
-    const d = day();
-    if (REST_GAMES.includes(location.hash.replace(/^#/, '').split('/')[0])) d.play = (d.play || 0) + 5;
+    const d = day(), rest = REST_GAMES.includes(location.hash.replace(/^#/, '').split('/')[0]);
+    if (rest) d.play = (d.play || 0) + 5;
     else d.sec += 5;
-    if (++tick % 6 === 0) save();
+    // посреди игры не сохраняем: запись в память телефона даёт заметную заминку; всё сохранится в конце игры и при выходе
+    if (++tick % 6 === 0 && !rest) save();
   }
 }, 5000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
