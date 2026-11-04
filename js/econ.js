@@ -111,13 +111,22 @@ function starsLine(got, hint) {
   if (!gameStarsLeft()) return '<p class="muted">Звёзды из игр для отдыха на сегодня собраны. Больше звёзд — за задания по математике!</p>';
   return `<p class="muted">${hint}</p>`;
 }
-// строка-цель вверху игры: «⭐ на 500 очков» с полоской
-function goalHTML(score, miles, mile, got, unit) {
-  if (!gameStarsLeft()) return `<span>${got ? 'Все ⭐ из игр на сегодня собраны!' : 'Звёзды из игр на сегодня собраны'} Играем для удовольствия 💖</span>`;
-  if (mile >= miles.length) return '<span>Все ⭐ этой игры собраны! Ставь рекорд 🏆</span>';
-  const prev = mile ? miles[mile - 1] : 0, goal = miles[mile];
-  const pc = Math.max(0, Math.min(100, Math.round(100 * (score - prev) / (goal - prev))));
-  return `<span>⭐ за ${U.fmt(goal)} ${unit}</span><div class="bar"><i style="width:${pc}%"></i></div>`;
+// строка-цель вверху игры: «⭐ за 500 очков» с полоской.
+// Текст меняем только когда он другой, а полоску двигаем без пересчёта страницы (scaleX).
+function setGoal(el, score, miles, mile, got, unit) {
+  let label, k = null;
+  if (!gameStarsLeft()) label = 'На сегодня все ⭐ из игр собраны 💖';
+  else if (mile >= miles.length) label = 'Все ⭐ этой игры собраны! Ставь рекорд 🏆';
+  else {
+    const prev = mile ? miles[mile - 1] : 0, goal = miles[mile];
+    label = `⭐ за ${U.fmt(goal)} ${unit}`;
+    k = Math.max(0, Math.min(1, (score - prev) / (goal - prev)));
+  }
+  if (el.dataset.label !== label) {
+    el.dataset.label = label;
+    el.innerHTML = `<span>${label}</span>${k === null ? '' : '<div class="bar"><i></i></div>'}`;
+  }
+  if (k !== null) el.querySelector('.bar i').style.transform = `scaleX(${k.toFixed(3)})`;
 }
 
 // ═════════════ Пропущенные дни ═════════════
