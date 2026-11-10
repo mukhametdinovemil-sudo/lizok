@@ -14,6 +14,7 @@ const fresh = () => ({
   gm: {}, lastSeen: null, fined: 0, fineLog: [], finesOn: true,
   // helper.js: открывала ли помощницу, сколько вопросов задала, вопросы без ответа (для брата)
   helper: { seen: false, n: 0, log: [] },
+  introDay: null, // день, когда показывали полную заставку (intro.js)
 });
 let S;
 function load() {
@@ -907,6 +908,13 @@ load();
 const demo = new URLSearchParams(location.search).get('demo');
 if (demo && !S.mascot && MASCOTS[demo]) S.mascot = demo;
 if (gateOpen()) { window.addEventListener('hashchange', route); route(); } else gate();
+// заставка: полная раз в день, иначе короткая; не в проверках, не на снимках и не без помощника
+const q = new URLSearchParams(location.search);
+if (gateOpen() && S.mascot && !demo && !location.pathname.includes('/tests/') && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const full = S.introDay !== U.today();
+  if (full) { S.introDay = U.today(); save(); }
+  showIntro({ full });
+}
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
