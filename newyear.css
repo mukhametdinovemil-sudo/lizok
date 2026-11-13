@@ -1,0 +1,144 @@
+/* ═════════ Новогоднее оформление (класс .ny у body ставит newyear.js в сезон 13.11–15.01) ═════════ */
+/* Правило из оптимизации игр: анимируем только transform и opacity. */
+
+/* фон: сверху зимняя голубизна */
+body.ny::before {
+  background-image: url("img/bg-tile.svg"), linear-gradient(180deg, #dbe7ff 0, rgba(255, 240, 246, 0) 360px), radial-gradient(circle at 100% 30%, #f3e8ff 0, transparent 35%);
+  background-size: 200px 200px, auto, auto;
+}
+
+/* снег за содержимым: 18 снежинок, каждая двигается только через transform */
+.ny-snow { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+body:not(.ny) .ny-snow, .ny-quiet .ny-snow { display: none; }
+.ny-snow i { position: absolute; top: -30px; left: var(--x); font-style: normal; line-height: 1; font-size: var(--s); color: #fff;
+  text-shadow: 0 0 3px #7f9cf5, 0 0 1px #5c7cfa; animation: nyFall var(--d) linear infinite; animation-delay: var(--w); will-change: transform; }
+@keyframes nyFall { from { transform: translate3d(0, 0, 0) rotate(0); } to { transform: translate3d(var(--dx), 112vh, 0) rotate(220deg); } }
+@media (prefers-reduced-motion: reduce) { .ny-snow, .ny-flakes { display: none; } }
+
+/* гирлянда сверху разделов (картинка сама мигает лампочками) */
+.ny .screen.hub::before, .ny-hub::before { content: ''; display: block; flex: none; height: 26px; margin: -6px -14px -8px;
+  background: url("img/ny-garland.svg") repeat-x 0 0 / 130px 26px; pointer-events: none; }
+
+/* ёлочка вместо звезды на вкладке «Сегодня» */
+.ny .tab-b[data-go="#home"] span { font-size: 0; }
+.ny .tab-b[data-go="#home"] span::before { content: '🎄'; font-size: 24px; }
+
+/* снежная шапка на кнопке «Продолжить» */
+.ny .continue { position: relative; }
+.ny .continue::before { content: ''; position: absolute; left: 14px; right: 14px; top: -8px; height: 14px; pointer-events: none;
+  background: radial-gradient(circle at 50% 100%, #fff 7.5px, transparent 8px) 0 0 / 22px 10px repeat-x, linear-gradient(#fff, #fff) 0 100% / 100% 5px no-repeat;
+  border-radius: 0 0 8px 8px; }
+
+/* в магазине 4 вкладки — буквы чуть мельче */
+.tabs.four .tab { font-size: 13px; padding: 10px 2px; }
+
+/* шапка Пинки (если на голове ничего не надето) */
+.pinky img.ny-hat { position: absolute; width: 58%; height: auto; top: -19%; left: 50%; transform: translateX(-50%) rotate(-6deg); pointer-events: none; }
+
+/* снежинки внутри тёмных карточек */
+.ny-flakes { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.ny-flakes i { position: absolute; top: -16px; left: var(--x); font-style: normal; line-height: 1; font-size: var(--s); color: #fff; opacity: .7;
+  animation: nyFallBox var(--d) linear infinite; animation-delay: var(--w); }
+@keyframes nyFallBox { to { transform: translate3d(var(--dx), var(--h, 220px), 0) rotate(180deg); } }
+
+/* ёлка */
+.ny-tree { display: block; overflow: visible; }
+.ny-tree .ny-wire path { fill: none; stroke: #ffe066; stroke-width: 1.4; opacity: .75; }
+.ny-tree .lt-a { animation: nyBlink 1.4s steps(1) infinite; }
+.ny-tree .lt-b { animation: nyBlink 1.4s steps(1) -.7s infinite; }
+@keyframes nyBlink { 50% { opacity: .25; } }
+.ny-tree .ny-toy.new { transform-box: fill-box; transform-origin: center; animation: pop .7s .25s backwards; }
+.ny-star { fill: rgba(255, 224, 102, .12); stroke: #ffe066; stroke-width: 1.6; stroke-dasharray: 3 3; stroke-linejoin: round; }
+.ny-star.on { fill: #ffd43b; stroke: #f08c00; stroke-dasharray: none; transform-box: fill-box; transform-origin: center; animation: nyStar 2.4s ease-in-out infinite; }
+@keyframes nyStar { 50% { transform: scale(1.18) rotate(10deg); } }
+
+/* карточка на главной */
+.ny-home { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 14px 8px 6px; border-radius: 24px; color: #fff; overflow: hidden;
+  background: radial-gradient(circle at 85% 0%, rgba(255, 255, 255, .16), transparent 35%), linear-gradient(150deg, #1b1f5a, #3b2a8f 65%, #7048e8); box-shadow: 0 8px 22px rgba(59, 42, 143, .35); }
+.ny-home:active { transform: scale(.98); }
+.ny-home .ny-flakes { --h: 150px; }
+.ny-home .ny-tree { width: 80px; height: 100px; flex: none; position: relative; z-index: 1; }
+.nyh-body { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 1; }
+.nyh-body small { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: .85; }
+.nyh-body b { font-size: 26px; line-height: 1.15; }
+.nyh-body span { font-size: 14px; opacity: .95; }
+.ny-home em { position: absolute; top: 10px; right: 12px; z-index: 2; background: #ff6b6b; color: #fff; font-style: normal; font-weight: 900; border-radius: 999px; min-width: 26px; padding: 2px 8px; text-align: center; animation: nyBeat 1.2s ease-in-out infinite; }
+@keyframes nyBeat { 50% { transform: scale(1.18); } }
+
+/* баннеры в «Учёбе» и «Играх» */
+.ny-banner { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px; border-radius: 22px; color: #fff; overflow: hidden;
+  background: linear-gradient(140deg, #e03131, #ff6b6b 60%, #ff8fab); box-shadow: 0 8px 20px rgba(224, 49, 49, .28); }
+.ny-banner.blue { background: linear-gradient(140deg, #1b1f5a, #3b2a8f 60%, #7048e8); box-shadow: 0 8px 20px rgba(59, 42, 143, .3); }
+.ny-banner:active { transform: scale(.98); }
+.ny-banner .ny-flakes { --h: 120px; }
+.nyb-e { font-size: 40px; flex: none; position: relative; z-index: 1; animation: floaty 3s ease-in-out infinite; }
+.nyb-body { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 1; }
+.nyb-body b { font-size: 18px; }
+.nyb-body small { font-size: 13px; opacity: .95; }
+.nyb-go { font-size: 30px; font-weight: 900; opacity: .8; position: relative; z-index: 1; }
+
+/* экран «Новый год» */
+.ny-sky { position: relative; border-radius: 28px; padding: 12px 12px 0; color: #fff; overflow: hidden;
+  background: radial-gradient(circle at 85% 8%, rgba(255, 255, 255, .2), transparent 30%), linear-gradient(170deg, #141850, #33267f 60%, #6a4be0); box-shadow: 0 10px 26px rgba(59, 42, 143, .35); }
+.ny-sky .ny-flakes { --h: 340px; }
+.ny-sky-in { position: relative; z-index: 1; display: flex; align-items: center; gap: 6px; }
+.ny-sky .ny-tree { width: 168px; height: 210px; flex: none; }
+.ny-count { flex: 1; text-align: center; padding-bottom: 20px; }
+.ny-count small { display: block; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: .85; }
+.ny-count b { display: block; font-size: 64px; line-height: 1; font-weight: 900; color: #ffe066; }
+.ny-count b.hny { font-size: 28px; line-height: 1.15; margin: 6px 0; }
+.ny-count span { font-size: 20px; font-weight: 800; }
+.ny-count p { font-size: 13px; margin: 10px 0 0; opacity: .9; }
+.ny-count strong { font-size: 16px; color: #fff; }
+.ny-drift { position: relative; z-index: 1; height: 26px; margin: -20px -12px 0;
+  background: radial-gradient(70% 100% at 25% 100%, #eef4ff 98%, transparent 100%), radial-gradient(60% 90% at 80% 100%, #eef4ff 98%, transparent 100%), linear-gradient(#eef4ff, #eef4ff) 0 100% / 100% 8px no-repeat; }
+.ny-today { text-align: center; }
+.ny-st { margin: 0 0 4px; }
+.ny-open-btn { background: linear-gradient(180deg, #ff8787, #e03131); box-shadow: 0 5px 0 #b02525, var(--shadow); animation: nyBeat 1.4s ease-in-out infinite; }
+
+/* календарь окошек */
+.ny-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.ny-c { position: relative; aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; line-height: 1; padding: 0;
+  background: #fff; box-shadow: 0 3px 8px rgba(59, 42, 143, .12); color: #5c4b8a; }
+.ny-c b { font-size: 16px; }
+.ny-c small { font-size: 10px; font-weight: 700; opacity: .8; }
+.ny-c .nc-e { font-size: 20px; }
+.ny-c i { position: absolute; top: -5px; right: -4px; font-style: normal; font-size: 10px; font-weight: 900; background: #ffd43b; color: #7a4a00; border-radius: 999px; padding: 2px 4px; }
+.ny-c.got { background: linear-gradient(160deg, #fff3bf, #ffd8a8); }
+.ny-c.future { background: linear-gradient(160deg, #eef4ff, #dbe4ff); color: #4c6ef5; }
+.ny-c.pre { opacity: .35; }
+.ny-c.frost { background: #e9ecef; color: #868e96; }
+.ny-c.frost .nc-e { opacity: .7; }
+.ny-c.today { background: linear-gradient(160deg, #ff8787, #e03131); color: #fff; box-shadow: 0 0 0 3px #ffd43b, 0 6px 14px rgba(224, 49, 49, .4); animation: nyBeat 1.3s ease-in-out infinite; z-index: 1; }
+.ny-c.today.lock { animation: none; background: #fff; color: #e03131; box-shadow: inset 0 0 0 3px #ff8787; }
+.ny-c.big { grid-column: 1 / -1; aspect-ratio: auto; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 12px 14px; text-align: left; }
+.ny-c.big .nc-e { font-size: 34px; }
+.ny-c.big .nc-t { display: flex; flex-direction: column; gap: 3px; }
+.ny-c.big b { font-size: 18px; }
+.ny-c.big small { font-size: 13px; line-height: 1.25; }
+
+/* окно «окошко открыто» */
+.ny-gift { position: relative; height: 92px; }
+.ny-gift span { position: absolute; left: 50%; top: 0; width: 1em; margin-left: -.5em; font-size: 80px; line-height: 1; }
+.ny-gift .ny-g1 { animation: nyGiftOut 1s ease forwards; }
+.ny-gift .ny-g2 { animation: pop .6s .85s backwards; }
+@keyframes nyGiftOut { 0%, 12% { transform: rotate(0); } 24% { transform: rotate(-12deg); } 36% { transform: rotate(10deg); } 48% { transform: rotate(-8deg); } 60% { transform: rotate(6deg); }
+  72% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1.8); opacity: 0; visibility: hidden; } }
+.ny-line { color: #2b8a3e; font-weight: 800; }
+.ny-fact { background: #eef4ff; color: #3b2a8f; border-radius: 16px; padding: 10px 12px; font-size: 14px; margin: 6px 0 14px; text-align: left; }
+
+/* игра «Подарки» */
+.nyg-demo { position: relative; height: 140px; border-radius: 24px; overflow: hidden; background: linear-gradient(#141850, #33267f 60%, #6a4be0); }
+.nyg-demo i { position: absolute; top: -40px; font-style: normal; font-size: 34px; animation: nyDemo 3s linear infinite; }
+.nyg-demo i:nth-child(1) { left: 14%; }
+.nyg-demo i:nth-child(2) { left: 45%; animation-delay: -1s; }
+.nyg-demo i:nth-child(3) { left: 76%; animation-delay: -2s; }
+@keyframes nyDemo { to { transform: translateY(200px) rotate(25deg); } }
+.nyg-demo img { position: absolute; left: 50%; bottom: -8px; width: 70px; margin-left: -35px; animation: floaty 2.4s ease-in-out infinite; }
+.nyg-screen { gap: 6px; height: 100vh; height: 100dvh; overflow: hidden; touch-action: none; -webkit-touch-callout: none; padding: calc(env(safe-area-inset-top) + 10px) 0 0; }
+.nyg-screen .top, .nyg-screen .lives { margin: 0 14px; }
+.nyg-q { flex: 1; text-align: center; font-size: 30px; font-weight: 900; color: #3b2a8f; white-space: nowrap; }
+.nyg-q.bump { animation: nyQ .4s ease; }
+@keyframes nyQ { 0% { transform: scale(.7); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+.nyg-field { position: relative; flex: 1; min-height: 0; touch-action: none; background: radial-gradient(circle at 80% 10%, rgba(255, 255, 255, .18), transparent 30%), linear-gradient(#141850, #33267f 55%, #6a4be0); }
+.nyg-field canvas { display: block; }
