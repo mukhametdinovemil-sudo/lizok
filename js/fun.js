@@ -45,7 +45,9 @@ const bal = () => Math.max(0, S.stars - S.spent - (S.fined || 0));
 // ═════════════ Пинки в нарядах ═════════════
 function pinkyHTML(cls = '') {
   const eq = S.equip || {};
-  return `<div class="pinky ${cls}"><img src="img/pinky.svg" alt="Пинки">${['head', 'face', 'neck', 'hand']
+  // в новогодний сезон — шапка, если на голове ничего не надето (newyear.js)
+  const hat = !(eq.head && ITEM[eq.head]) && typeof nyOn === 'function' && nyOn() ? '<img class="ny-hat" src="img/ny-hat.svg" alt="">' : '';
+  return `<div class="pinky ${cls}"><img src="img/pinky.svg" alt="Пинки">${hat}${['head', 'face', 'neck', 'hand']
     .map(s => (eq[s] && ITEM[eq[s]] ? `<span class="acc acc-${s}">${ITEM[eq[s]].e}</span>` : '')).join('')}</div>`;
 }
 
@@ -119,11 +121,15 @@ function roomScene() {
 let roomTab = 'wear';
 function room() {
   const draw = popSel => {
-    const list = SHOP.filter(i => i.kind === roomTab);
+    // новогодние вещи (newyear.js): в сезон — своя вкладка; купленные остаются и в обычных вкладках
+    const nyTab = typeof nyOn === 'function' && nyOn(), tabs = [['wear', '👗 Наряды'], ['room', '🛋️ Мебель'], ['wall', '🎨 Обои']];
+    if (nyTab) tabs.push(['ny', '🎄 Праздник']);
+    if (roomTab === 'ny' && !nyTab) roomTab = 'wear';
+    const list = roomTab === 'ny' ? SHOP.filter(i => i.ny) : SHOP.filter(i => i.kind === roomTab && (!i.ny || ownedIt(i)));
     app.innerHTML = `<div class="screen">${header('🏠 Комната Пинки', '#pinky')}
       ${roomScene()}
       <div class="bank">В копилке: <b>⭐ ${bal()}</b></div>
-      <div class="tabs">${[['wear', '👗 Наряды'], ['room', '🛋️ Мебель'], ['wall', '🎨 Обои']].map(([k, t]) => `<button class="tab ${k === roomTab ? 'on' : ''}" data-tab="${k}">${t}</button>`).join('')}</div>
+      <div class="tabs ${nyTab ? 'four' : ''}">${tabs.map(([k, t]) => `<button class="tab ${k === roomTab ? 'on' : ''}" data-tab="${k}">${t}</button>`).join('')}</div>
       <div class="shop">${list.map(it => {
         const own = ownedIt(it), on = isOn(it);
         const lab = on ? (it.kind === 'wall' ? '✓ сейчас' : '✓ снять') : own ? (it.kind === 'wear' ? 'надеть' : it.kind === 'room' ? 'поставить' : 'выбрать') : '⭐ ' + it.price;
@@ -210,7 +216,8 @@ function chest() {
   app.onclick = e => { if (e.target.closest('[data-act="go"]')) startDaily(); };
 }
 function startDaily() {
-  const all = Object.values(LESSON_BY_ID), done = all.filter(l => (S.lessons[l.id] || {}).runs);
+  // новогодние уроки — только в сезон (newyear.js)
+  const all = Object.values(LESSON_BY_ID).filter(l => l.topic !== 'ny' || (typeof nyOn === 'function' && nyOn())), done = all.filter(l => (S.lessons[l.id] || {}).runs);
   const pool = done.length >= 2 ? done : all;
   const curT = TOPICS.find(t => t.id === S.current), curPool = curT ? curT.lessons : null;
   const items = [1, 2, 2, 2, 3].map((level, i) => {
@@ -220,7 +227,7 @@ function startDaily() {
   startSession({ mode: 'daily', title: 'Задание дня', items, back: '#games' });
 }
 function chestReward() {
-  const r = Math.random(), free = SHOP.filter(i => i.price > 0 && i.price <= 40 && !S.owned.includes(i.id));
+  const r = Math.random(), free = SHOP.filter(i => i.price > 0 && i.price <= 40 && !S.owned.includes(i.id) && (!i.ny || (typeof nyOn === 'function' && nyOn())));
   if (r < 0.3 && free.length) { const it = U.pick(free); S.owned.push(it.id); return { e: it.e, text: `Подарок для Пинки: ${it.name}! Найди его в комнате Пинки.` }; }
   if (r < 0.55) { const s = giveSticker(); return { e: s, text: 'Новая наклейка в альбом!' }; }
   const n = U.rnd(5, 12); S.stars += n;
