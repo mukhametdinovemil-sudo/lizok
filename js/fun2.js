@@ -157,7 +157,8 @@ function pinkyWrong(ans) {
 function teachTask() {
   const all = Object.values(LESSON_BY_ID), done = all.filter(l => (S.lessons[l.id] || {}).runs);
   const curT = TOPICS.find(t => t.id === S.current);
-  const pool = done.length >= 2 ? done : curT ? curT.lessons : all.filter(l => !TOPICS.find(t => t.id === l.topic).extra);
+  // новогодних уроков нет в TOPICS (newyear.js) — без проверки здесь была бы ошибка
+  const pool = done.length >= 2 ? done : curT ? curT.lessons : all.filter(l => { const t = TOPICS.find(x => x.id === l.topic); return t && !t.extra; });
   for (let k = 0; k < 50; k++) {
     const L = U.pick(pool), lv = U.pick([1, 2, 2, 3]), t = U.pick(L.gens[lv]).fn();
     if (t.type === 'num' && t.answer >= 5) return t;
