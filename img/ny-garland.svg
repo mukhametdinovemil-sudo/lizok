@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 26" width="130" height="26">
+  <!-- гирлянда сверху экранов (повторяется по ширине); лампочки мигают по очереди 2 раза в секунду -->
+  <path d="M0 4 Q65 22 130 4" stroke="#2b8a3e" stroke-width="1.8" fill="none"/>
+  <g>
+    <animate attributeName="opacity" values="1;0.35" dur="1.4s" calcMode="discrete" repeatCount="indefinite"/>
+    <circle cx="13" cy="15" r="7" fill="#ff6b6b" opacity=".3"/>
+    <rect x="11" y="6.4" width="4" height="3.4" rx="1" fill="#495057"/>
+    <ellipse cx="13" cy="14.6" rx="3.6" ry="5" fill="#ff6b6b"/>
+    <circle cx="65" cy="21" r="7" fill="#ffd43b" opacity=".3"/>
+    <rect x="63" y="12.2" width="4" height="3.4" rx="1" fill="#495057"/>
+    <ellipse cx="65" cy="20.4" rx="3.6" ry="5" fill="#ffd43b"/>
+    <circle cx="117" cy="15" r="7" fill="#69db7c" opacity=".3"/>
+    <rect x="115" y="6.4" width="4" height="3.4" rx="1" fill="#495057"/>
+    <ellipse cx="117" cy="14.6" rx="3.6" ry="5" fill="#69db7c"/>
+  </g>
+  <g>
+    <animate attributeName="opacity" values="0.35;1" dur="1.4s" calcMode="discrete" repeatCount="indefinite"/>
+    <circle cx="39" cy="19.4" r="7" fill="#74c0fc" opacity=".3"/>
+    <rect x="37" y="10.7" width="4" height="3.4" rx="1" fill="#495057"/>
+    <ellipse cx="39" cy="18.9" rx="3.6" ry="5" fill="#74c0fc"/>
+    <circle cx="91" cy="19.4" r="7" fill="#f783ac" opacity=".3"/>
+    <rect x="89" y="10.7" width="4" height="3.4" rx="1" fill="#495057"/>
+    <ellipse cx="91" cy="18.9" rx="3.6" ry="5" fill="#f783ac"/>
+  </g>
+</svg>
