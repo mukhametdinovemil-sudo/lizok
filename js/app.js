@@ -138,7 +138,9 @@ function route() {
   app.onclick = null;
   if (!S.mascot) return welcome();
   const screens = { home, topic, lesson, practice, review, speed, stickers, parent, room, chest, balloons, teach, exam, awards, calendar, learn, games, pinky: pinkyHub, blocks, puzzles, jump };
+  if (typeof NY_SCREENS !== 'undefined') Object.assign(screens, NY_SCREENS); // новогодние экраны (newyear.js)
   (screens[name] || home)(arg);
+  if (typeof nyDecorate === 'function') nyDecorate(name); // снег, ёлка на главной, баннеры (newyear.js)
   const sc = app.firstElementChild;
   if (sc) sc.classList.add('enter'); // плавное появление экрана (games.css)
   window.scrollTo(0, 0);
@@ -337,6 +339,7 @@ function startTour(i) {
 
 // ═════════════ Тема: список уроков ═════════════
 function topic(id) {
+  if (id === 'ny') return go('#newyear'); // новогодние уроки живут на экране «Новый год»
   const t = TOPICS.find(x => x.id === id);
   if (!t || !t.lessons.length) return go('#home');
   if (!S.visited.includes(id)) { S.visited.push(id); save(); rocketTo(t); }
@@ -811,6 +814,7 @@ function parentDash() {
       <button class="btn ghost wide" data-act="import">Восстановить из кода</button>
       <div id="io"></div></div>
     ${econAdmin()}
+    ${typeof nyAdmin === 'function' ? nyAdmin() : ''}
     ${helperAdmin()}
     <div class="card"><h3>Настройки</h3>
       <button class="btn ghost wide" data-act="pin">Сменить ПИН-код</button>
@@ -821,7 +825,7 @@ function parentDash() {
     if (!b) return;
     const a = b.dataset.act, io = document.getElementById('io');
     if (prizeAction(a)) { if (a !== 'prize-set' || S.prize) parentDash(); return; }
-    if (econAction(a) || helperAction(a)) { parentDash(); return; }
+    if (econAction(a) || helperAction(a) || (typeof nyAction === 'function' && nyAction(a))) { parentDash(); return; }
     if (a === 'cur') { S.current = b.dataset.t || null; save(); toast(S.current ? 'Тема отмечена 📌' : 'Отметка снята'); parentDash(); return; }
     if (a === 'export') {
       const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
