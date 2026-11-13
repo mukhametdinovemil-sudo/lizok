@@ -7,20 +7,27 @@
 
 const INTRO = { full: 3.8, short: 1.7, fade: 0.35 };
 
+// новогодний сезон (newyear.js): снег, праздничные искры и надпись «С Новым годом, Лизок!»
+const introNY = () => typeof nyOn === 'function' && nyOn();
 function introGreeting() {
+  if (introNY()) { const n = nyLeft(); return n > 0 ? `До Нового года ${n} ${U.plural(n, 'день', 'дня', 'дней')}!` : 'Ура, праздник! 🎉'; }
   const h = new Date().getHours();
   return h < 5 ? 'Доброй ночи, Лизок!' : h < 12 ? 'Доброе утро, Лизок!' : h < 18 ? 'Добрый день, Лизок!' : 'Добрый вечер, Лизок!';
 }
+// строки надписи: dy — сдвиг от середины надписи
+const introLines = () => (introNY()
+  ? [{ t: 'С Новым годом,', big: false, dy: -48 }, { t: 'Лизок!', big: true, dy: 28 }]
+  : [{ t: 'Лизок', big: true, dy: -30 }, { t: 'и математика', big: false, dy: 50 }]);
 // точки надписи: рисуем текст на скрытом холсте и собираем закрашенные пиксели
 function introTextPoints(W, cy) {
   const c = document.createElement('canvas'), x = c.getContext('2d');
   c.width = W; c.height = 200;
   x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#fff';
   const big = Math.min(74, Math.floor(W * 0.2)), small = Math.min(30, Math.floor(W * 0.082));
-  x.font = `900 ${big}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
-  x.fillText('Лизок', W / 2, 70);
-  x.font = `800 ${small}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
-  x.fillText('и математика', W / 2, 150);
+  for (const l of introLines()) {
+    x.font = `${l.big ? 900 : 800} ${l.big ? big : small}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
+    x.fillText(l.t, W / 2, 100 + l.dy);
+  }
   const d = x.getImageData(0, 0, W, 200).data, pts = [], step = 3;
   for (let yy = 0; yy < 200; yy += step) for (let xx = 0; xx < W; xx += step) if (d[(yy * W + xx) * 4 + 3] > 140) pts.push([xx, yy - 100 + cy]);
   return { pts: U.shuffle(pts), big, small };
@@ -40,7 +47,8 @@ function showIntro(opt = {}) {
   // ── картинки, нарисованные заранее ──
   const sprite = (w, h, paint) => { const c = document.createElement('canvas'); c.width = w * dpr; c.height = h * dpr; const x = c.getContext('2d'); x.scale(dpr, dpr); paint(x); return c; };
   const glow = color => sprite(24, 24, x => { const g = x.createRadialGradient(12, 12, 0, 12, 12, 12); g.addColorStop(0, '#fff'); g.addColorStop(0.3, color); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 24, 24); });
-  const COLORS = ['#ff8fc0', '#ffd43b', '#d0bfff', '#fff3bf', '#ff5fa2', '#b197fc'];
+  const ny = introNY();
+  const COLORS = ny ? ['#ff6b6b', '#ffd43b', '#69db7c', '#fff3bf', '#ff8fc0', '#a5d8ff'] : ['#ff8fc0', '#ffd43b', '#d0bfff', '#fff3bf', '#ff5fa2', '#b197fc'];
   const glows = COLORS.map(glow);
   const starS = glow('#e5dbff');
   const rocketS = sprite(110, 110, x => { x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '72px system-ui, sans-serif'; x.fillText('🚀', 55, 55); });
@@ -69,15 +77,27 @@ function showIntro(opt = {}) {
     lastT = t;
     // небо
     const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#1b1040'); g.addColorStop(0.65, '#4b2a99'); g.addColorStop(1, '#8f6ff0');
+    if (ny) { g.addColorStop(0, '#0f1647'); g.addColorStop(0.65, '#2f3a9e'); g.addColorStop(1, '#6f7ff0'); }
+    else { g.addColorStop(0, '#1b1040'); g.addColorStop(0.65, '#4b2a99'); g.addColorStop(1, '#8f6ff0'); }
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    // звёзды
+    // звёзды (в новогодний сезон — падающий снег)
     for (const s of stars) {
+      if (ny) {
+        ctx.globalAlpha = 0.85;
+        const y = (s.y + t * (26 + s.sp * 30)) % (H + 10) - 5, x = s.x + Math.sin(t * s.sp + s.ph) * 10, r = s.r * 1.4;
+        ctx.drawImage(starS, x - r * 2, y - r * 2, r * 4, r * 4);
+        continue;
+      }
       const a = 0.35 + 0.65 * Math.abs(Math.sin(t * s.sp + s.ph));
       ctx.globalAlpha = a;
       ctx.drawImage(starS, s.x - s.r * 2, s.y - s.r * 2, s.r * 4, s.r * 4);
     }
     ctx.globalAlpha = 1;
+    // сугробы внизу
+    if (ny) {
+      ctx.fillStyle = '#eef4ff';
+      for (let i = 0; i <= 4; i++) { ctx.beginPath(); ctx.ellipse(W * i / 4, H + 6, W / 3.6, 46, 0, 0, Math.PI * 2); ctx.fill(); }
+    }
     // падающая звезда
     if (full && t > meteor.t0 && t < meteor.t0 + 0.7) {
       const k = (t - meteor.t0) / 0.7, mx = meteor.x - k * 260, my = meteor.y + k * 150;
@@ -117,13 +137,12 @@ function showIntro(opt = {}) {
     if (ta > 0) {
       ctx.save();
       ctx.globalAlpha = ta; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#ff8fc0'; ctx.shadowBlur = 24;
-      ctx.fillStyle = '#fff';
-      ctx.font = `900 ${text.big}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
-      ctx.fillText('Лизок', W / 2, cy - 30);
-      ctx.font = `800 ${text.small}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
-      ctx.fillStyle = '#ffe3ef';
-      ctx.fillText('и математика', W / 2, cy + 50);
+      ctx.shadowColor = ny ? '#ff6b6b' : '#ff8fc0'; ctx.shadowBlur = 24;
+      for (const l of introLines()) {
+        ctx.font = `${l.big ? 900 : 800} ${l.big ? text.big : text.small}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
+        ctx.fillStyle = l.big ? '#fff' : ny ? '#fff3bf' : '#ffe3ef';
+        ctx.fillText(l.t, W / 2, cy + l.dy);
+      }
       ctx.restore();
     }
     if (rx > -500) {
