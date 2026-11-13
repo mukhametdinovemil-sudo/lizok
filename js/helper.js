@@ -41,7 +41,8 @@ const hPlain = html => U.plain(html).replace(/&lt;/g, '<').replace(/&gt;/g, '>')
 function hIndex() {
   if (H.index) return H.index;
   H.index = [];
-  for (const t of TOPICS) for (const L of t.lessons) L.theory.forEach((c, i) => {
+  const all = typeof NY_TOPIC !== 'undefined' ? [...TOPICS, NY_TOPIC] : TOPICS; // + новогодние уроки (newyear.js)
+  for (const t of all) for (const L of t.lessons) L.theory.forEach((c, i) => {
     H.index.push({ L, i, c, lt: hTokens(L.title), tt: hTokens(t.title), ct: hTokens(c.title), bt: hTokens(U.plain(c.html)) });
   });
   return H.index;
